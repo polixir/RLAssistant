@@ -315,6 +315,7 @@ def plot_results(
     show_number=True,
     skip_legend=False,
     split_by_metrics=False,
+    base_dpi=90,
     rescale_idx=None):
     '''
     Plot multiple Results objects
