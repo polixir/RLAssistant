@@ -9,7 +9,7 @@ tensorboard --logdir ./log/your_task/,./log/archived/
 
 from RLA.easy_log.log_tools import ArchiveLogTool
 import argparse
-from config import *
+from rla_script_config import *
 
 def argsparser():
     parser = argparse.ArgumentParser("Archive Log")

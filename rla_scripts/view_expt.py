@@ -4,7 +4,7 @@ A script to view data of experiments.
 
 from RLA.easy_log.log_tools import ViewLogTool
 import argparse
-from config import *
+from rla_script_config import *
 
 def argsparser():
     parser = argparse.ArgumentParser("View Log")

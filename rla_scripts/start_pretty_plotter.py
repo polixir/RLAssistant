@@ -7,7 +7,7 @@ import os
 from RLA.easy_log.log_tools import PrettyPlotterTool, Filter
 import argparse
 from RLA.rla_argparser import boolean_flag
-from config import *
+from rla_script_config import *
 
 from smart_logger.front_page.page import start_page_server
 import smart_logger.common.plot_config as plot_config
