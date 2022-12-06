@@ -1,6 +1,6 @@
 from test._base import BaseTest
 from RLA.easy_log.log_tools import DeleteLogTool, Filter
-from RLA.easy_log.log_tools import ArchiveLogTool, ViewLogTool
+from RLA.easy_log.log_tools import ArchiveLogTool, ViewLogTool, MigrateLogTool
 from RLA.easy_log.tester import exp_manager
 
 import os
@@ -56,6 +56,17 @@ class ScriptTest(BaseTest):
         dlt = DeleteLogTool(proj_root=self.TARGET_DATA_ROOT + '/arc', regex='2022/03/01/21-13*', filter=filter, task_table_name=self.TASK_NAME)
         log_found = dlt.delete_related_log(skip_ask=True)
         assert log_found == 10
+
+    def test_migrate(self) -> None:
+        self.remove_and_copy_data()
+        dlt = MigrateLogTool(proj_root=self.TARGET_DATA_ROOT, task_table_name=self.TASK_NAME,
+                             regex='2022/03/01/21-13*', target_task_table_name=self.TASK_NAME + '_v2')
+        dlt.migrate_log(skip_ask=True)
+        filter = Filter()
+        filter.config(type=Filter.ALL, timstep_bound=1)
+        dlt = DeleteLogTool(proj_root=self.TARGET_DATA_ROOT, regex='2022/03/01/21-13*', filter=filter, task_table_name=self.TASK_NAME + '_v2')
+        log_found = dlt.delete_related_log(skip_ask=True)
+        assert log_found == 10, f"found {log_found} expts."
 
     def test_view(self) -> None:
         """

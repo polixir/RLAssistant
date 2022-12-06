@@ -161,7 +161,7 @@ class DeleteLogTool(BasicLogTool):
         else:
             s = input("delete these files? (y/n)")
         if s == 'y':
-            print("do delete ...")
+            print("deleting ...")
             return self._delete_related_log(show=False, regex=self.regex, delete_log_types=delete_log_types)
         else:
             return 0
@@ -189,9 +189,10 @@ class DeleteLogTool(BasicLogTool):
                 s = input("delete these files? (y/n)")
             if s == 'y' or skip_ask:
                 for res in self.small_timestep_regs:
-                    print("do delete: ", res[1])
+                    print("deleting: ", res[1])
                     log_found += self._delete_related_log(show=False, regex=res[0] + '*')
         return log_found
+
 
 class ArchiveLogTool(BasicLogTool):
     def __init__(self, proj_root, task_table_name, regex, archive_table_name=ARCHIVED_TABLE, *args, **kwargs):
@@ -241,8 +242,62 @@ class ArchiveLogTool(BasicLogTool):
         else:
             s = input("archive these files? (y/n) \n ")
         if s == 'y':
-            print("do archive ...")
+            print("archiving ...")
             self._archive_log(show=False)
+
+
+
+class MigrateLogTool(BasicLogTool):
+    def __init__(self, proj_root, task_table_name, regex, target_task_table_name, *args, **kwargs):
+        self.proj_root = proj_root
+        self.task_table_name = task_table_name
+        self.regex = regex
+        self.target_task_table_name = target_task_table_name
+        super(MigrateLogTool, self).__init__(*args, **kwargs)
+
+    def _migrate_log(self, show=False):
+        for log_type in self.log_types:
+            root_dir_regex = osp.join(self.proj_root, log_type, self.task_table_name, self.regex)
+            target_root_dir = osp.join(self.proj_root, log_type, self.target_task_table_name)
+            prefix_dir = osp.join(self.proj_root, log_type, self.task_table_name)
+            prefix_len = len(prefix_dir)
+            empty = True
+            # os.system("chmod +x -R \"{}\"".format(prefix_dir))
+            for root_dir in glob.glob(root_dir_regex):
+                empty = False
+                if os.path.exists(root_dir):
+                    # remove the overlapped path.
+                    archiving_target = osp.join(target_root_dir, root_dir[prefix_len+1:])
+                    archiving_target_dir = '/'.join(archiving_target.split('/')[:-1])
+                    os.makedirs(archiving_target_dir, exist_ok=True)
+                    if os.path.isdir(root_dir):
+                        if not show:
+                            # os.makedirs(archiving_target, exist_ok=True)
+                            try:
+                                shutil.copytree(root_dir, archiving_target)
+                            except FileExistsError as e:
+                                print(e)
+
+                        print("copy dir {}, to {}".format(root_dir, archiving_target))
+                    else:
+                        if not show:
+                            shutil.copy(root_dir, archiving_target)
+                        print("copy file {}, to {}".format(root_dir, archiving_target))
+                else:
+                    print("no dir {}".format(root_dir))
+            if empty: print("empty regex {}".format(root_dir_regex))
+        pass
+
+    def migrate_log(self, skip_ask=False):
+        self._migrate_log(show=True)
+        if skip_ask:
+            s = 'y'
+        else:
+            s = input("migrate these files? (y/n) \n ")
+        if s == 'y':
+            print("migrating ...")
+            self._migrate_log(show=False)
+
 
 
 class ViewLogTool(BasicLogTool):

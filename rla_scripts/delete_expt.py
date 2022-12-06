@@ -4,7 +4,7 @@ A script to delete useless experimental logs by regex string.
 """
 from RLA.easy_log.log_tools import DeleteLogTool, Filter
 import argparse
-from config import *
+from rla_script_config import *
 
 def argsparser():
     parser = argparse.ArgumentParser("Delete Log")
