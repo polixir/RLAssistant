@@ -1,12 +1,12 @@
 # Created by xionghuichen at 2022/12/6
 # Email: chenxh@lamda.nju.edu.cn
 """
-A script to move some important experiments to another task_table
+A script to migrate some important experiments in one task table to the target task table.
 
 
 """
 from rla_script_config import *
-from RLA.easy_log.log_tools import MoveLogTool
+from RLA.easy_log.log_tools import MigrateLogTool
 import argparse
 
 def argsparser():
@@ -21,6 +21,6 @@ def argsparser():
 
 if __name__=='__main__':
     args = argsparser()
-    dlt = MoveLogTool(proj_root=DATA_ROOT, task_table_name=args.task_table, regex=args.regex,
-                      target_task_table_name=args.target_task_table)
-    dlt.archive_log()
+    dlt = MigrateLogTool(proj_root=DATA_ROOT, task_table_name=args.task_table, regex=args.regex,
+                         target_task_table_name=args.target_task_table)
+    dlt.migrate_log()

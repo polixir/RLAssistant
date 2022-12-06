@@ -243,23 +243,24 @@ class ArchiveLogTool(BasicLogTool):
             s = input("archive these files? (y/n) \n ")
         if s == 'y':
             print("archiving ...")
+
             self._archive_log(show=False)
 
 
 
-class MoveLogTool(BasicLogTool):
+class MigrateLogTool(BasicLogTool):
     def __init__(self, proj_root, task_table_name, regex, target_task_table_name, *args, **kwargs):
         self.proj_root = proj_root
         self.task_table_name = task_table_name
         self.regex = regex
         self.target_task_table_name = target_task_table_name
-        super(MoveLogTool, self).__init__(*args, **kwargs)
+        super(MigrateLogTool, self).__init__(*args, **kwargs)
 
-    def _archive_log(self, show=False):
+    def _migrate_log(self, show=False):
         for log_type in self.log_types:
             root_dir_regex = osp.join(self.proj_root, log_type, self.task_table_name, self.regex)
             target_root_dir = osp.join(self.proj_root, log_type, self.target_task_table_name)
-            prefix_dir = osp.join(self.proj_root, log_type)
+            prefix_dir = osp.join(self.proj_root, log_type, self.task_table_name)
             prefix_len = len(prefix_dir)
             empty = True
             # os.system("chmod +x -R \"{}\"".format(prefix_dir))
@@ -288,15 +289,15 @@ class MoveLogTool(BasicLogTool):
             if empty: print("empty regex {}".format(root_dir_regex))
         pass
 
-    def archive_log(self, skip_ask=False):
-        self._archive_log(show=True)
+    def migrate_log(self, skip_ask=False):
+        self._migrate_log(show=True)
         if skip_ask:
             s = 'y'
         else:
-            s = input("archive these files? (y/n) \n ")
+            s = input("migrate these files? (y/n) \n ")
         if s == 'y':
-            print("moving ...")
-            self._archive_log(show=False)
+            print("migrating ...")
+            self._migrate_log(show=False)
 
 
 
