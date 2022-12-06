@@ -222,10 +222,10 @@ def load_results(root_dir_or_dirs, names, x_bound, enable_progress=True, use_buf
                                 print("read buf: {}".format(buf_csv))
                                 raw_df = read_csv(buf_csv)
                             else:
-                                reader = pd.read_csv(progcsv, chunksize=100000,  quoting=csv.QUOTE_NONE,
-                                                     encoding='utf-8', index_col=False, comment='#')
-                                raw_df = pd.DataFrame()
-
+                                reader = pd.read_csv(progcsv, chunksize=5000,  quoting=csv.QUOTE_NONE,
+                                                     encoding='utf-8', index_col=False, comment='#', memory_map=True)
+                                # raw_df = pd.DataFrame()
+                                slim_chunk_list = []
                                 for chunk in reader:
                                     slim_chunk = chunk
                                     # if set(names).issubset(slim_chunk.columns):
@@ -244,7 +244,8 @@ def load_results(root_dir_or_dirs, names, x_bound, enable_progress=True, use_buf
                                                                                    slim_chunk[x_bound[0]] > x_bound[1][0])]
                                         else:
                                             slim_chunk = slim_chunk[slim_chunk[x_bound[0]] < x_bound[1]]
-                                    raw_df = pd.concat([raw_df, slim_chunk], ignore_index=True)
+                                    slim_chunk_list.append(slim_chunk)
+                                raw_df = pd.concat(slim_chunk_list, ignore_index=True)
                                 import csv
                                 raw_df.to_csv(buf_csv, index=False)
                             result['progress'] = raw_df
