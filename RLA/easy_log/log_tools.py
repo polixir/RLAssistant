@@ -243,6 +243,7 @@ class ArchiveLogTool(BasicLogTool):
             s = input("archive these files? (y/n) \n ")
         if s == 'y':
             print("archiving ...")
+
             self._archive_log(show=False)
 
 
