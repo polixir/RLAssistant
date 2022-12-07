@@ -10,7 +10,7 @@ from RLA.easy_log.log_tools import MigrateLogTool
 import argparse
 
 def argsparser():
-    parser = argparse.ArgumentParser("Archive Log")
+    parser = argparse.ArgumentParser("Migrate Log")
     # reduce setting
     parser.add_argument('--task_table', type=str)
     parser.add_argument('--target_task_table', type=str)
