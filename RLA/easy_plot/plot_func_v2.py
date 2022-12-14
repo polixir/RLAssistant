@@ -28,7 +28,7 @@ def default_key_to_legend(parse_dict, split_keys, y_name, use_y_name=True):
 
 def plot_func(data_root:str, task_table_name:str, regs:list, split_keys:list, metrics:list,
               use_buf=False, verbose=True,
-              xlim: Optional[tuple] = None,
+              x_bound: Optional[int]=None,
               xlabel: Optional[str] = DEFAULT_X_NAME, ylabel: Optional[str] = None,
               scale_dict: Optional[dict] = None, regs2legends: Optional[list] = None,
               key_to_legend_fn: Optional[Callable] = default_key_to_legend,
@@ -57,8 +57,7 @@ def plot_func(data_root:str, task_table_name:str, regs:list, split_keys:list, me
     :type metrics:
     :param use_buf: use the preloaded csv data instead of loading from scratch
     :type use_buf: bool
-    :param xlim: set the x limits of the x axes.
-    :type xlim: Optional[tuple]
+    :param x_bound: drop the collected with time-step larger than x_bound.
     :param xlabel: set the label of the y axes.
     :type xlabel: Optional[str]
     :param ylabel: set the label of the y axes.
@@ -90,7 +89,7 @@ def plot_func(data_root:str, task_table_name:str, regs:list, split_keys:list, me
         counter = 0
         for k, v in log_dict.items():
             result = plot_util.load_results(v.dirname, names=metrics + [DEFAULT_X_NAME],
-                                   x_bound=[DEFAULT_X_NAME, xlim], use_buf=use_buf)
+                                   x_bound=[DEFAULT_X_NAME, x_bound], use_buf=use_buf)
             if len(result) == 0:
                 continue
             assert len(result) == 1
