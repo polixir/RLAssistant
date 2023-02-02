@@ -63,6 +63,8 @@ class ManagerTest(BaseTest):
             # moving averaged
             logger.ma_record_tabular("perf/mse", loss_out, 10)
             logger.record_tabular("y_out", np.mean(y))
+            logger.record_tabular("y_out_std", np.std(y))
+            logger.record_tabular("y_out_max", np.max(y))
             if i % 20 == 0:
                 exp_manager.save_checkpoint()
             if i % 10 == 0:
@@ -108,6 +110,8 @@ class ManagerTest(BaseTest):
             optimizer.step()
             logger.ma_record_tabular("perf/mse", np.mean(mse_loss.detach().cpu().numpy()), 10)
             logger.record_tabular("y_out", np.mean(y))
+            logger.record_tabular("y_out_std", np.std(y))
+            logger.record_tabular("y_out_max", np.max(y))
             if i % 10 == 0:
                 logger.ma_record_tabular("perf/mse-long", np.mean(mse_loss.detach().cpu().numpy()), 10, freq=25)
                 logger.record_tabular("y_out-long", np.mean(y), freq=25)
