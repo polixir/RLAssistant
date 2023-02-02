@@ -29,7 +29,7 @@ def default_key_to_legend(parse_dict, split_keys, y_name, use_y_name=True):
 def plot_func(data_root:str, task_table_name:str, regs:list, split_keys:list, metrics:list,
               use_buf=False, verbose=True,
               x_bound: Optional[int]=None,
-              xlabel: Optional[str] = DEFAULT_X_NAME, ylabel: Optional[str] = None,
+              xlabel: Optional[str] = DEFAULT_X_NAME, ylabel: Optional[Union[str, list]] = None,
               scale_dict: Optional[dict] = None, regs2legends: Optional[list] = None,
               key_to_legend_fn: Optional[Callable] = default_key_to_legend,
               split_by_metrics=True,
@@ -61,7 +61,7 @@ def plot_func(data_root:str, task_table_name:str, regs:list, split_keys:list, me
     :param xlabel: set the label of the y axes.
     :type xlabel: Optional[str]
     :param ylabel: set the label of the y axes.
-    :type ylabel: Optional[str]
+    :type ylabel: Optional[str,list]
     :param scale_dict: a function dict, to map the value of the metrics through customize functions.
     e.g.,set metrics = ['return'], scale_dict = {'return': lambda x: np.log(x)}, then we will plot a log-scale return.
     :type scale_dict: Optional[dict]
@@ -112,7 +112,7 @@ def plot_func(data_root:str, task_table_name:str, regs:list, split_keys:list, me
         ylabel = metrics
 
     if regs2legends is not None:
-        assert len(regs2legends) == len(regs) and len(metrics) == 1,  \
+        assert len(regs2legends) == len(regs),  \
             "In manual legend-key mode, the number of keys should be one-to-one matched with regs"
         # if len(regs2legends) == len(regs):
         group_fn = lambda r: split_by_reg(taskpath=r, reg_group=reg_group, y_names=y_names)
@@ -120,7 +120,7 @@ def plot_func(data_root:str, task_table_name:str, regs:list, split_keys:list, me
         group_fn = lambda r: picture_split(taskpath=r, split_keys=split_keys, y_names=y_names,
                                            key_to_legend_fn=lambda parse_dict, split_keys, y_name:
                                            key_to_legend_fn(parse_dict, split_keys, y_name, not split_by_metrics))
-    _, _, lgd, texts, g2lf, score_results = \
+    fig, _, lgd, texts, g2lf, score_results = \
         plot_util.plot_results(results, xy_fn= lambda r, y_names: csv_to_xy(r, DEFAULT_X_NAME, y_names, final_scale_dict),
                            group_fn=group_fn, average_group=True, ylabel=ylabel, xlabel=xlabel, metrics=metrics,
                                split_by_metrics=split_by_metrics, regs2legends=regs2legends, *args, **kwargs)
@@ -145,7 +145,7 @@ def split_by_reg(taskpath, reg_group, y_names):
             if taskpath.dirname == result.dirname:
                 assert task_split_key == "None", "one experiment should belong to only one reg_group"
                 task_split_key = str(i)
-    assert len(y_names) == 1
+    # assert len(y_names) == 1
     return task_split_key, y_names
 
 def split_by_task(taskpath, split_keys, y_names, key_to_legend_fn):

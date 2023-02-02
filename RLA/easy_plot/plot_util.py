@@ -318,6 +318,7 @@ def plot_results(
     split_by_metrics=False,
     use_marker=False,
     markers=None,
+    legend_ncol=1,
     rescale_idx=None):
     '''
     Plot multiple Results objects
@@ -366,6 +367,7 @@ def plot_results(
 
     colors: list                            - customize your corlor map through a list. COLORS/PRETTY_COLORS by default.
 
+    legend_ncol: int                        - The number of columns that the legend has.
     '''
     score_results = {}
     if vary_len_plot:
@@ -378,8 +380,8 @@ def plot_results(
     if markers is None:
         markers = PRETTY_MARKERS
 
-    if pretty:
-        assert not split_by_metrics or len(metrics) == 1, "pretty mode cannot support the multiply metric plotting. Please use only one metric for plotting."
+    # if pretty:
+        # assert not split_by_metrics or len(metrics) == 1, "pretty mode cannot support the multiply metric plotting. Please use only one metric for plotting."
     split_by_metrics = split_by_metrics and len(metrics) != 1
     if split_fn is None: split_fn = lambda _ : ''
     if group_fn is None: group_fn = lambda _ : ''
@@ -425,18 +427,20 @@ def plot_results(
     # if average_group:
     #     resample = resample or default_samples
     lgd = None
+
+    texts = []
     if split_by_metrics:
         keys = metrics
     else:
         keys = sorted(sk2r.keys())
-    for (isplit, sk) in enumerate(keys):
+    for (kid, sk) in enumerate(keys):
         g2l = {}
         g2lf = {}
         g2c = defaultdict(int)
         sresults = sk2r[sk]
         gresults = defaultdict(list)
-        idx_row = isplit // ncols
-        idx_col = isplit % ncols
+        idx_row = kid // ncols
+        idx_col = kid % ncols
         ax = axarr[idx_row][idx_col]
         for result in sresults:
             result_groups, y_names = group_fn(result)
@@ -524,10 +528,33 @@ def plot_results(
                     g2lf[group + '-ss'] = [ax.fill_between(usex, ymean - ystd,    ymean + ystd,    color=color, alpha=.2), ymean, ystd]
                 if shaded_range:
                     g2lf[group + '-sr'] = [ax.fill_between(usex, ymin,    ymax,    color=color, alpha=.1), ymin, ymax]
-
-        ax.set_title(sk)
+        if not pretty:
+            ax.set_title(sk)
         if split_by_metrics:
-            ax.set_ylabel(sk)
+            if ylabel is None:
+                select_label = sk
+            elif type(ylabel) == str:
+                select_label = ylabel
+            elif type(ylabel) == list:
+                assert split_by_metrics, "list-wise ylabel can only support in split_by_metrics mode."
+                select_label = ylabel[kid]
+            else:
+                raise NotImplementedError
+            if pretty:
+                ax.set_ylabel(select_label, fontsize=18)
+            else:
+                ax.set_ylabel(select_label)
+        if pretty:
+            from matplotlib.ticker import ScalarFormatter
+            xfmt = ScalarFormatter(useMathText=True)
+            xfmt.set_powerlimits((-4, 4))  # Or whatever your limits are . . .
+            ax.yaxis.set_major_formatter(xfmt)
+            ax.yaxis.offsetText.set_fontsize(15)
+            ax.xaxis.set_major_formatter(xfmt)
+            ax.xaxis.offsetText.set_fontsize(15)
+            ax.yaxis.set_tick_params(labelsize=16)
+            ax.xaxis.set_tick_params(labelsize=16)
+
         if log:
             ax.set_yscale('log')
 
@@ -546,14 +573,6 @@ def plot_results(
         legend_lines = legend_lines[sorted_index]
         if regs2legends is not None:
             legend_keys = np.array(regs2legends)
-            # if replace_legend_sort is not None:
-            #     sorted_index = replace_legend_sort
-            # else:
-            #     sorted_index = np.argsort(legend_keys)
-            # assert legend_keys.shape[0] == legend_lines.shape[0], \
-            #     "The number of lines is not consistent with the keys"
-            # legend_keys = legend_keys[sorted_index]
-            # legend_lines = legend_lines[sorted_index]
         if pretty:
             for index, l in enumerate(legend_lines):
                 if use_marker:
@@ -579,6 +598,7 @@ def plot_results(
                     score_results[legend_keys[index]+'-range'] = [res[1][-1], res[2][-1]]
 
         if bound_line is not None:
+            assert len(sk2r.keys()) == 1, "bound line can only support the single-metric mode."
             for bl in bound_line:
                 y = np.ones(x.shape) * bl[0]
                 l, = ax.plot(x, y, bl[2], color=bl[1])
@@ -594,6 +614,8 @@ def plot_results(
                     loc=2 if legend_outside else None,
                     bbox_to_anchor=(1,1) if legend_outside else None,
                     fontsize=15 if pretty else None)
+                if legend_outside:
+                    f.subplots_adjust(bottom=0.12, left=0.12)
             else:
                 lgd = f.legend(
                     legend_lines,
@@ -601,12 +623,16 @@ def plot_results(
                     loc='lower center' if legend_outside else None,
                     bbox_to_anchor=(0.5, 0.0) if legend_outside else None,
                     fontsize=15 if pretty else None,
-                    borderaxespad=0)
+                    ncol=legend_ncol,
+                    fancybox=True,
+                    borderaxespad=0.0)
+                if legend_outside:
+                    leg_rows = np.ceil(len(legend_lines) / legend_ncol)
+                    f.subplots_adjust(bottom=(0.2 + 0.05 * (leg_rows - 1)) / nrows)
         else:
             lgd = None
 
 
-    texts = []
     # add xlabels, but only to the bottom row
     if xlabel is not None:
         for ax in axarr[-1]:
@@ -622,30 +648,36 @@ def plot_results(
         # plt.ylabel(ylabel)
         # plt.sca(f)
         if pretty:
-            texts.append(f.supylabel(ylabel, fontsize=20, horizontalalignment='center'))
+            if not split_by_metrics or len(metrics) == 1:
+                texts.append(f.supylabel(ylabel, fontsize=20, horizontalalignment='center'))
+            else:
+                pass
         else:
             if not split_by_metrics or len(metrics) == 1:
                 f.supylabel(ylabel, horizontalalignment='center')
     if title is not None:
-        plt.title(title)
+        if pretty:
+            texts.append(plt.title(title, fontsize=18))
+        else:
+            texts.append(plt.title(title))
     plt.grid(True)
     if ylim is not None:
         plt.ylim(ylim)
     if xlim is not None:
         plt.xlim(xlim)
-    if pretty:
-        from matplotlib.ticker import ScalarFormatter
-        xfmt = ScalarFormatter(useMathText=True)
-        xfmt.set_powerlimits((-4, 4))  # Or whatever your limits are . . .
-        plt.gca().yaxis.set_major_formatter(xfmt)
-        plt.gca().yaxis.offsetText.set_fontsize(15)
-        plt.gca().xaxis.set_major_formatter(xfmt)
-        plt.gca().xaxis.offsetText.set_fontsize(15)
-        texts.extend(plt.xticks(fontsize=16)[1])
-        texts.extend(plt.yticks(fontsize=16)[1])
-        texts.append(plt.title(title, fontsize=18))
-    else:
-        plt.gcf().subplots_adjust(bottom=0.12, left=0.12)
+    # if pretty:
+    #     from matplotlib.ticker import ScalarFormatter
+    #     xfmt = ScalarFormatter(useMathText=True)
+    #     xfmt.set_powerlimits((-4, 4))  # Or whatever your limits are . . .
+    #     plt.gca().yaxis.set_major_formatter(xfmt)
+    #     plt.gca().yaxis.offsetText.set_fontsize(15)
+    #     plt.gca().xaxis.set_major_formatter(xfmt)
+    #     plt.gca().xaxis.offsetText.set_fontsize(15)
+    #     texts.extend(plt.xticks(fontsize=16)[1])
+    #     texts.extend(plt.yticks(fontsize=16)[1])
+    #     texts.append(plt.title(title, fontsize=18))
+    # else:
+    #     plt.gcf().subplots_adjust(bottom=0.12, left=0.12)
     return f, axarr, lgd, texts, g2lf, score_results
 
 def regression_analysis(df):
