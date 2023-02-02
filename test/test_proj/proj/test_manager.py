@@ -55,7 +55,7 @@ class ManagerTest(BaseTest):
 
         exp_manager.new_saver(var_prefix='', max_to_keep=1)
         # synthetic target function.
-        for i in range(0, 100):
+        for i in range(0, 1000):
             exp_manager.time_step_holder.set_time(i)
             x_input = np.random.normal(0, 3, [64, kwargs["input_size"]])
             y = target_func(x_input)
