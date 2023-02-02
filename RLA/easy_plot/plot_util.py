@@ -272,6 +272,7 @@ COLORS = ['blue', 'green', 'red',  'm', 'darkorange', 'k',
         'brown',    'lightblue', 'lime', 'lavender', 'turquoise',
          'tan', 'salmon',   'darkred', 'darkblue',  'gold']
 PRETTY_COLORS = ['orangered',  'royalblue', 'forestgreen',  'orange', 'deeppink', 'deepskyblue']
+PRETTY_MARKERS = ['o', 'v', 'd',  'P', 'p', ]
 
 def default_xy_fn(r, y_name):
     x = np.cumsum(r.monitor.l)
@@ -315,6 +316,8 @@ def plot_results(
     show_number=True,
     skip_legend=False,
     split_by_metrics=False,
+    use_marker=False,
+    markers=None,
     rescale_idx=None):
     '''
     Plot multiple Results objects
@@ -333,7 +336,7 @@ def plot_results(
                                               (if average_group is True). The default value is the same as default value for split_fn
 
     average_group: bool                     - if True, will average the curves in the same group and plot the mean. Enables resampling
-                                              (if resample = 0, will use 512 steps)
+                                              (if resample = 0, will use all steps)
 
     shaded_std: bool                        - if True (default), the shaded region corresponding to standard deviation of the group of curves will be
                                               shown (only applicable if average_group = True)
@@ -356,6 +359,12 @@ def plot_results(
     smooth_step: float                      - when resampling (i.e. when resample > 0 or average_group is True), use this EMA decay parameter (in units of the new grid step).
                                               See docstrings for decay_steps in symmetric_ema or one_sided_ema functions.
 
+    use_marker: bool                        - if True, will use marker to the legend.
+
+    markers: list                            - customize your marker map through a list. PRETTY_MARKER by default.
+
+
+    colors: list                            - customize your corlor map through a list. COLORS/PRETTY_COLORS by default.
 
     '''
     score_results = {}
@@ -366,6 +375,8 @@ def plot_results(
             colors = PRETTY_COLORS
         else:
             colors = COLORS
+    if markers is None:
+        markers = PRETTY_MARKERS
 
     if pretty:
         assert not split_by_metrics or len(metrics) == 1, "pretty mode cannot support the multiply metric plotting. Please use only one metric for plotting."
@@ -459,6 +470,7 @@ def plot_results(
                 if not any(xys):
                     continue
                 color = colors[groups.index(group) % len(colors)]
+                marker = markers[groups.index(group) % len(markers)]
                 origxs = [xy[0] for xy in xys]
                 maxlen = max(map(len, origxs))
                 minxlen = min(map(len, origxs))
@@ -494,7 +506,17 @@ def plot_results(
                 ymin = np.nanmin(ys, axis=0)
                 ymax = np.nanmax(ys, axis=0)
                 ystderr = ystd / np.sqrt(len(ys))
-                l, = axarr[idx_row][idx_col].plot(usex, ymean, color=color)
+                if use_marker:
+                    if resample:
+                        marker_every = resample // 10
+                    else:
+                        marker_every = len(ymean) // 10
+                    if marker_every == 0:
+                        marker_every = 1
+                    l, = axarr[idx_row][idx_col].plot(usex, ymean, color=color, marker=marker, markevery=marker_every,
+                                                      markersize=10)
+                else:
+                    l, = axarr[idx_row][idx_col].plot(usex, ymean, color=color)
                 g2l[group] = l
                 if shaded_err:
                     g2lf[group + '-se'] = [ax.fill_between(usex, ymean - ystderr, ymean + ystderr, color=color, alpha=.2), ymean, ystderr]
@@ -534,7 +556,10 @@ def plot_results(
             # legend_lines = legend_lines[sorted_index]
         if pretty:
             for index, l in enumerate(legend_lines):
-                l.update(props={"color": colors[index % len(colors)]})
+                if use_marker:
+                    l.update(props={"color": colors[index % len(colors)]})
+                else:
+                    l.update(props={"color": colors[index % len(colors)]})
                 original_legend_keys = np.array(['%s' % (g) for g in g2l] if average_group else g2l.keys())
                 original_legend_keys = original_legend_keys[sorted_index]
                 if shaded_err:
@@ -581,12 +606,13 @@ def plot_results(
             lgd = None
 
 
+    texts = []
     # add xlabels, but only to the bottom row
     if xlabel is not None:
         for ax in axarr[-1]:
             plt.sca(ax)
             if pretty:
-                plt.xlabel(xlabel, fontsize=20)
+                texts.append(plt.xlabel(xlabel, fontsize=20))
             else:
                 plt.xlabel(xlabel)
     # add ylabels, but only to left column
@@ -596,7 +622,7 @@ def plot_results(
         # plt.ylabel(ylabel)
         # plt.sca(f)
         if pretty:
-            f.supylabel(ylabel, fontsize=20, horizontalalignment='center')
+            texts.append(f.supylabel(ylabel, fontsize=20, horizontalalignment='center'))
         else:
             if not split_by_metrics or len(metrics) == 1:
                 f.supylabel(ylabel, horizontalalignment='center')
@@ -607,7 +633,6 @@ def plot_results(
         plt.ylim(ylim)
     if xlim is not None:
         plt.xlim(xlim)
-    texts = []
     if pretty:
         from matplotlib.ticker import ScalarFormatter
         xfmt = ScalarFormatter(useMathText=True)
@@ -616,11 +641,9 @@ def plot_results(
         plt.gca().yaxis.offsetText.set_fontsize(15)
         plt.gca().xaxis.set_major_formatter(xfmt)
         plt.gca().xaxis.offsetText.set_fontsize(15)
-        # plt.xlabel(xlabel, fontsize=20)
-        # plt.ylabel(ylabel, fontsize=20)
-        plt.xticks(fontsize=16)
-        plt.yticks(fontsize=16)
-        plt.title(title, fontsize=18)
+        texts.extend(plt.xticks(fontsize=16)[1])
+        texts.extend(plt.yticks(fontsize=16)[1])
+        texts.append(plt.title(title, fontsize=18))
     else:
         plt.gcf().subplots_adjust(bottom=0.12, left=0.12)
     return f, axarr, lgd, texts, g2lf, score_results

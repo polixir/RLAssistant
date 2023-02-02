@@ -129,7 +129,6 @@ def plot_func(data_root:str, task_table_name:str, regs:list, split_keys:list, me
         import os
         file_name = osp.join(data_root, OTHER_RESULTS, 'easy_plot', save_name)
         os.makedirs(os.path.dirname(file_name), exist_ok=True)
-
         if lgd is not None:
             plt.savefig(file_name, bbox_extra_artists=tuple([lgd] + texts), bbox_inches='tight')
         else:

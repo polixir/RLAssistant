@@ -240,7 +240,10 @@ We manage the items in the database via toolkits in rla_scripts. Currently, the 
 3. Send to remote [TODO]
 4. Download from remote [TODO]
 
-We can use the above tools after copying the rla_scripts to our research project and modifying the DATA_ROOT in config.py to locate the root of the RLA database. We give several user cases in https://github.com/xionghuichen/RLAssistant/blob/main/test/test_scripts.py
+We can use the above tools after copying the rla_scripts to our research project and modifying the DATA_ROOT in config.py to locate the root of the RLA database. We give several user cases in https://github.com/xionghuichen/RLAssistant/blob/main/test/test_scripts.py. 
+We will also introduce our practices of using RLA to manage our projects .
+
+## Practices of managing the experiments via RLA scripts
 
 
 ## Distributed training & centralized logs
