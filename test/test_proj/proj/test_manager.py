@@ -150,9 +150,10 @@ class ManagerTest(BaseTest):
         yaml['DL_FRAMEWORK'] = 'torch'
         yaml['SEND_LOG_FILE'] = True
         yaml['REMOTE_SETTING']['ftp_server'] = '127.0.0.1'
-        yaml['REMOTE_SETTING']['file_transfer_protocol'] = 'sftp'
+        yaml['REMOTE_SETTING']['file_transfer_protocol'] = private_config.protocol
         yaml['REMOTE_SETTING']['username'] = private_config.username
         yaml['REMOTE_SETTING']['password'] = private_config.password
+        yaml['REMOTE_SETTING']['port'] = private_config.port
         yaml['REMOTE_SETTING']['remote_log_root'] = private_config.remote_root
 
         self._init_proj(yaml, is_master_node=False)
