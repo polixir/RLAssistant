@@ -1,6 +1,7 @@
 # Created by xionghuichen at 2022/8/10
 # Email: chenxh@lamda.nju.edu.cn
 import glob
+import json
 import os.path as osp
 import os
 import dill
@@ -8,13 +9,11 @@ import copy
 import numpy as np
 from typing import Dict, List, Tuple, Type, Union, Optional, Callable
 import matplotlib.pyplot as plt
-
 from RLA import logger
 from RLA.const import DEFAULT_X_NAME
 from RLA.query_tool import experiment_data_query, extract_valid_index
-
 from RLA.easy_plot import plot_util
-from RLA.easy_log.const import LOG, ARCHIVE_TESTER, OTHER_RESULTS
+from RLA.easy_log.const import LOG, ARCHIVE_TESTER, OTHER_RESULTS, HYPARAM
 
 
 
@@ -24,7 +23,6 @@ def default_key_to_legend(parse_dict, split_keys, y_name, use_y_name=True):
         return task_split_key + ' eval:' + y_name
     else:
         return task_split_key
-
 
 def plot_func(data_root:str, task_table_name:str, regs:list, split_keys:list, metrics:list,
               use_buf=False, verbose=True,
@@ -97,7 +95,11 @@ def plot_func(data_root:str, task_table_name:str, regs:list, split_keys:list, me
             if verbose:
                 print("find log", v.dirname)
             counter += 1
-            result.hyper_param = tester_dict[k].exp_manager.hyper_param
+            if os.path.exists(osp.join(v.dirname, HYPARAM + '.json')):
+                with open(osp.join(v.dirname, HYPARAM + '.json')) as f:
+                    result.hyper_param = json.load(f)
+            else:
+                result.hyper_param = tester_dict[k].exp_manager.hyper_param
             results.append(result)
             reg_group[reg].append(result)
         print("find log number", counter)
@@ -126,7 +128,6 @@ def plot_func(data_root:str, task_table_name:str, regs:list, split_keys:list, me
                                split_by_metrics=split_by_metrics, regs2legends=regs2legends, *args, **kwargs)
     print("--- complete process ---")
     if save_name is not None:
-        import os
         file_name = osp.join(data_root, OTHER_RESULTS, 'easy_plot', save_name)
         os.makedirs(os.path.dirname(file_name), exist_ok=True)
         if lgd is not None:

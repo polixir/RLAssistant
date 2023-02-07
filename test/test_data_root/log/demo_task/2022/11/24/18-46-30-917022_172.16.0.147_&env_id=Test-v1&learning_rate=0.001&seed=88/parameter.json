@@ -1,0 +1,9 @@
+{
+    "env_id": "Test-v1",
+    "info": "default exp info",
+    "input_size": 16,
+    "learning_rate": 0.001,
+    "loaded_date": true,
+    "loaded_task_name": "",
+    "seed": 88
+}

@@ -5,7 +5,7 @@ ARCHIVE_TESTER = 'archive_tester'
 OTHER_RESULTS = 'results'
 ARCHIVED_TABLE = 'arc'
 default_log_types = [LOG, CODE, CHECKPOINT, ARCHIVE_TESTER, OTHER_RESULTS]
-
+HYPARAM = 'parameter'
 
 class LoadTesterMode:
     FORK_TO_NEW = 'fork'

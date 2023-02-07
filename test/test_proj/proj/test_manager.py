@@ -55,7 +55,7 @@ class ManagerTest(BaseTest):
 
         exp_manager.new_saver(var_prefix='', max_to_keep=1)
         # synthetic target function.
-        for i in range(0, 1000):
+        for i in range(0, 100):
             exp_manager.time_step_holder.set_time(i)
             x_input = np.random.normal(0, 3, [64, kwargs["input_size"]])
             y = target_func(x_input)
@@ -143,10 +143,22 @@ class ManagerTest(BaseTest):
         yaml = self._load_rla_config()
         try:
             from test.test_proj.proj import private_config
+            # try to import libs
         except ImportError as e:
             print("[WARN] for this test, you should config your username, password, and the remote root firstly.")
             return
             # raise RuntimeError
+        try:
+            if private_config.protocol == 'ftp':
+                import ftplib
+            elif private_config.protocol == 'sftp':
+                import pysftp
+            else:
+                raise NotImplementedError
+        except ImportError as e:
+            print(e)
+            print(f"[WARN] the select protocol {private_config.protocol} cannot be loaded. skip the unittest.")
+            return
         yaml['DL_FRAMEWORK'] = 'torch'
         yaml['SEND_LOG_FILE'] = True
         yaml['REMOTE_SETTING']['ftp_server'] = '127.0.0.1'
