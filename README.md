@@ -53,7 +53,7 @@ Here we construct a database in "example/sb_ppo_example/". We hold different typ
 The experiment data are stored in the above folders 
 with the same "structured names" based on the formulation of `{$task_table_name}${%Y}/${%m}/${%d}/${%H-%M-%S-%f}_${ip address}_${tracked hyper-parameters}`, 
 where ``{$task_table_name}`` is a customized string to explain the purpose of the experiments in this "task table",  which is the root of the experiments (`demo_task` in the figure), 
-``${%Y}/${%m}/${%d}/${%H-%M-%S-%f}`` record the timestamp of the experiment created, `${ip address}` record the machine that create the experiment, and `${tracked hyper-parameters}` are auto-generated hyper-parameters to explain the features of the experiments.
+``${%Y}/${%m}/${%d}/${%H-%M-%S-%f}`` records the timestamp of the created experiment, `${ip address}` records the machine that creates the experiment, and `${tracked hyper-parameters}` are some auto-generated hyper-parameters to explain the features of the experiments.
 
 
 
@@ -114,7 +114,7 @@ pip install -e .
 ## Workflow
 
 
-We build an example project for integrating RLA, which can be seen in ./example/simplest_code. Now we summarize the steps to use it.
+We build an example project to include most of the features of RLA, which can be seen in ./example/simplest_code. Now we summarize the steps to use it.
 
 ### Step1: Configuration. 
 1. We define the property of the database in `rla_config.yaml`. You can construct your YAML file based on the template in ./example/simplest_code/rla_config.yaml. 
@@ -150,6 +150,7 @@ We build an example project for integrating RLA, which can be seen in ./example/
     
 4. We add the generated data items to .gitignore to avoid pushing them into our git repo.
    ```gitignore
+   **/tmp_data/**
    **/archive_tester/**
    **/checkpoint/**
    **/code/**
@@ -220,11 +221,9 @@ The figure plotted by plot_func will be saved in the "results" directory.
 
 The methods to handle the experiments can be split into the following modules:
 
-**Query**
-
 Currently, we develop the query tools based on two common scenarios: result visualization and experiment review. 
 
-Result visualization:
+**Result visualization**:
    1. Tensorboard: We can use tensorboard/tensorboardX to view the recorded logs. The event of tensorboard will be saved in `${data_root}/log/${task_name}/${index_name}/tb/events`. 
       We can view the results in tensorboard by: `tensorboard --logdir ${data_root}/log/${task_name}`.
       For example, lanuch tensorboard by `tensorboard --logdir ./example/simplest_code/log/demo_task/2022/03`. We can see results:
@@ -236,9 +235,11 @@ Result visualization:
    3. View data in "results" directory directly: other types of data are stored in `${data_root}/results/${task_name}/${index_name}`
     ![img.png](resource/demo-results-res.png)
 
-Experiment review: 
-1. Given any experiment named as `${task_name}/${index_name}`, we can find the line-by-line code in `${data_root}/code/${task_name}/${index_name}`. We can configure the files to be stored in BACKUP_CONFIG in rla_config.yaml.
-2. The corresponding hyper-parameters (recorded by `exp_manager.set_hyper_param`) can be found in `${data_root}/log/${task_name}/${index_name}/parameter.json`.
+**Experiment review**: 
+
+Given any experiment named as `${task_name}/${index_name}`, we can find the line-by-line code in `${data_root}/code/${task_name}/${index_name}` and corresponding hyperparameters in `${data_root}/code/${task_name}/${index_name}/parameter.json`. We can configure the files to be stored in BACKUP_CONFIG in rla_config.yaml.
+
+You can use the `Compare with...` method in Pycharm or any `folder comparison` extension in vscode to compare the difference of any two experiments.
 
 **Modify**
 
