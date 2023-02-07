@@ -215,6 +215,11 @@ class Tester(object,):
         self.serialize_object_and_save()
         self.__copy_source_code(self.run_file, code_dir)
         self._feed_hyper_params_to_tb()
+        params = self.hyper_param
+        for param_dir in [self.code_dir, self.log_dir]:
+            with open(osp.join(param_dir, HYPARAM + '.json'), 'w') as f:
+                json.dump(params, f, sort_keys=True, indent=4, allow_nan=True, default=lambda o: '<not serializable>')
+                print("gen:", osp.join(param_dir, 'parameter.json'))
         self.print_log_dir()
 
     def update_log_files_location(self, root:str):
@@ -782,9 +787,6 @@ class Tester(object,):
         # formatted_log_name = self.log_name_formatter(self.get_task_table_name(), self.record_date)
         params = exp_manager.hyper_param
         # params['formatted_log_name'] = formatted_log_name
-        json.dump(params, open(osp.join(self.code_dir, 'parameter.json'), 'w'),
-                  sort_keys=True, indent=4, allow_nan=True, default=lambda o: '<not serializable>')
-        print("gen:", osp.join(self.code_dir, 'parameter.json'))
 
 
     def print_large_memory_variable(self):

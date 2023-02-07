@@ -5,7 +5,6 @@ import os
 import traceback
 from RLA.const import *
 from RLA.easy_log import logger
-
 import pysftp
 
 
@@ -16,6 +15,7 @@ def ftp_factory(name, server, username, password, port, ignore=None):
         return SFTPHandler(sftp_server=server, username=username, password=password, port=port, ignore=ignore)
     else:
         raise NotImplementedError
+
 
 class FTPHandler(object):
 
@@ -138,6 +138,7 @@ class FTPHandler(object):
     def close(self):
         self.ftp.quit()
         self.ftp.close()
+
 
 class SFTPHandler(FTPHandler):
 
