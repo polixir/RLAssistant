@@ -1,4 +1,11 @@
 # RL experiment Assistant (RLA)
+![](https://img.shields.io/github/license/xionghuichen/RLAssistant)
+![](https://img.shields.io/github/v/release/polixir/RLAssistant)
+![](https://img.shields.io/github/contributors-anon/polixir/RLAssistant?color=yellow)
+![](https://img.shields.io/github/commit-activity/m/polixir/RLAssistant?color=red)
+
+
+
 ![img.png](resource/logo.png)
 RLA is a tool for managing your RL experiments automatically (e.g., your hyper-parameters, logs, checkpoints, figures, code, etc.). 
 RLA has decoupled from the training code and only some additional configurations are needed. Before using RLA, we recommend you to read the section "Design Principles of RLA", which will be helpful for you to understand the basic logic of the repo. 
