@@ -3,8 +3,9 @@ CODE = 'code'
 CHECKPOINT = 'checkpoint'
 ARCHIVE_TESTER = 'archive_tester'
 OTHER_RESULTS = 'results'
+TMP_DATA = 'tmp_data'
 ARCHIVED_TABLE = 'arc'
-default_log_types = [LOG, CODE, CHECKPOINT, ARCHIVE_TESTER, OTHER_RESULTS]
+default_log_types = [LOG, CODE, CHECKPOINT, ARCHIVE_TESTER, OTHER_RESULTS, TMP_DATA]
 HYPARAM = 'parameter'
 
 class LoadTesterMode:

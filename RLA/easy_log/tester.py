@@ -208,6 +208,7 @@ class Tester(object,):
         self.pkl_dir, self.pkl_file = self.__create_file_directory(osp.join(self.data_root, ARCHIVE_TESTER, self.task_table_name), '.pkl')
         self.checkpoint_dir, _ = self.__create_file_directory(osp.join(self.data_root, CHECKPOINT, self.task_table_name), is_file=False)
         self.results_dir, _ = self.__create_file_directory(osp.join(self.data_root, OTHER_RESULTS, self.task_table_name), is_file=False)
+        self.tmp_data_dir, _ = self.__create_file_directory(osp.join(self.data_root, TMP_DATA, self.task_table_name), is_file=False)
         self.log_dir = log_dir
         self.code_dir = code_dir
 
@@ -238,6 +239,7 @@ class Tester(object,):
         self.pkl_dir, self.pkl_file = self.__create_file_directory(osp.join(self.data_root, ARCHIVE_TESTER, task_table_name), '.pkl')
         self.checkpoint_dir, _ = self.__create_file_directory(osp.join(self.data_root, CHECKPOINT, task_table_name), is_file=False)
         self.results_dir, _ = self.__create_file_directory(osp.join(self.data_root, OTHER_RESULTS, task_table_name), is_file=False)
+        self.tmp_data_dir, _ = self.__create_file_directory(osp.join(self.data_root, TMP_DATA, self.task_table_name), is_file=False)
         self.log_dir = log_dir
         self.code_dir = code_dir
         self.print_log_dir()
@@ -262,6 +264,11 @@ class Tester(object,):
             shutil.copytree(source_tester.results_dir, self.results_dir)
         else:
             logger.warn("[load warning]: can not find results dir")
+        if hasattr(source_tester, "tmp_data_dir") and os.path.exists(source_tester.tmp_data_dir):
+            shutil.rmtree(self.tmp_data_dir)
+            shutil.copytree(source_tester.tmp_data_dir, self.tmp_data_dir)
+        else:
+            logger.warn("[load warning]: can not find tmp_data dir")
         if os.path.exists(source_tester.log_dir):
             shutil.rmtree(self.log_dir)
             shutil.copytree(source_tester.log_dir, self.log_dir)
@@ -277,6 +284,8 @@ class Tester(object,):
         logger.info("pkl_file: {}".format(self.pkl_file))
         logger.info("checkpoint_dir: {}".format(self.checkpoint_dir))
         logger.info("results_dir: {}".format(self.results_dir))
+        if hasattr(self, 'tmp_data_dir'):
+            logger.info("tmp_data_dir: {}".format(self.tmp_data_dir))
 
     @classmethod
     def load_tester(cls, record_date, task_table_name, log_root):
