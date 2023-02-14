@@ -246,7 +246,7 @@ Currently, we develop the query tools based on two common scenarios: result visu
 
 Given any experiment named as `${task_name}/${index_name}`, we can find the line-by-line code in `${data_root}/code/${task_name}/${index_name}` and corresponding hyperparameters in `${data_root}/code/${task_name}/${index_name}/parameter.json`. We can configure the files to be stored in BACKUP_CONFIG in rla_config.yaml.
 
-You can use the `Compare with...` method in Pycharm or any `folder comparison` extension in vscode to compare the difference of any two experiments.
+You can use the `Compare with...` method in Pycharm or any `folder comparison` extension in vscode, e.g., [Compare Folders](https://marketplace.visualstudio.com/items?itemName=moshfeu.compare-folders), to compare the whole differences between any two experiments.
 
 **Modify**
 
