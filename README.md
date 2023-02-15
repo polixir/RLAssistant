@@ -1,5 +1,5 @@
 # RL experiment Assistant (RLA)
-![](https://img.shields.io/github/license/xionghuichen/RLAssistant)
+![](https://img.shields.io/github/license/polixir/RLAssistant)
 ![](https://img.shields.io/github/v/release/polixir/RLAssistant)
 ![](https://img.shields.io/github/contributors-anon/polixir/RLAssistant?color=yellow)
 ![](https://img.shields.io/github/commit-activity/m/polixir/RLAssistant?color=red)
