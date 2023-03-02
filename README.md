@@ -312,3 +312,9 @@ We write the usage of RLA as unit tests. You can check the scripts in `test` fol
 - [ ] download/upload experiment logs through timestamp.
 - [ ] allow sync LOG only or ALL TYPE LOGS.
 - [ ] add unit_test to ckp loader.
+
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=polixir/RLAssistant&type=Date)](https://star-history.com/#polixir/RLAssistant&Date)
+
