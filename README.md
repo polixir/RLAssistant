@@ -182,7 +182,7 @@ for i in range(1000):
     # tensorflow summary
     summary = tf.Summary()
     logger.log_from_tf_summary(summary)
-
+    logger.dump_tabular()
 ```
 **Record checkpoints**
 
