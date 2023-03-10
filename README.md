@@ -14,8 +14,6 @@ RLA has decoupled from the training code and only some additional configurations
 
 The project is still in development. Welcome to join us. :)
 
-We maintain an RLA in https://github.com/polixir/RLAssistant in the future which will consider extra requirements needed in the team cooperation scenario.
-
 
 
 ## Design Principles of RLA
@@ -112,7 +110,7 @@ We also list the RL research projects using RLA as follows:
 
 ## Installation
 ```angular2html
-git clone https://github.com/xionghuichen/RLAssistant.git
+git clone https://github.com/polixir/RLAssistant.git
 cd RLAssistant
 pip install -e .
 ```
