@@ -122,38 +122,51 @@ pip install -e .
 We build an example project to include most of the features of RLA, which can be seen in ./example/simplest_code. Now we summarize the steps to use it.
 
 ### Step1: Configuration. 
-1. We define the property of the database in `rla_config.yaml`. You can construct your YAML file based on the template in ./example/simplest_code/rla_config.yaml. 
-2. We define the property of the table in exp_manager.config. Before starting your experiment, you should configure the global object RLA.exp_manager like this:
+1. To configure the experiment "database", you need to create a YAML file rla_config.yaml. You can use the template provided in ./example/simplest_code/rla_config.yaml as a starting point.
+2. Before starting your experiment, you should configure the RLA.exp_manager object. Here's an example:
+
     ```python
-    from RLA import exp_manager
-    import os
-    kwargs = {'env_id': 'Hopper-v2', 'lr': 1e-3}
-    debug = False
-    exp_manager.set_hyper_param(**kwargs) # kwargs are the hyper-parameters for your experiment
-    exp_manager.add_record_param(["env_id"]) # add parts of hyper-parameters to name the index of data items for better readability.
-    
-    if debug: 
-        task_name = 'demo_task_debug' # define a task for debug.
-    else:
-        task_name = 'demo_task_v1' # define a task for training.
-   
-    def get_package_path():
-        return os.path.dirname(os.path.abspath(__file__))
+      from RLA import exp_manager
+      import os
 
-    rla_data_root = get_package_path() # the place to store the data items.
-   
-    rla_config = os.path.join(get_package_path(), 'rla_config.yaml')
+      kwargs = {'env_id': 'Hopper-v2', 'lr': 1e-3}
+      debug = False
 
-    ignore_file_path=os.path.join(get_package_path(), '.gitignore')
-    exp_manager.configure(task_table_name=task_name, ignore_file_path=ignore_file_path,
-                        rla_config=rla_config, data_root=rla_data_root)
-    exp_manager.log_files_gen() # initialize the data items.
-    exp_manager.print_args()
+      # Set hyperparameters for your experiment
+      exp_manager.set_hyper_param(**kwargs)
+
+      # Add parts of hyperparameters to name the index of data items for better readability
+      exp_manager.add_record_param(["env_id"])
+      
+      # To keep the conciseness of your experiment "database", we recommend creating an additional task table for debugging.
+      # When debugging a new feature, set the `debug` value to True, then the recorded experiments will be stored in a temporary location (`demo_task_debug` in this example), instead of mixing into your formal experiment "database". 
+      if debug:
+          task_table_name = 'demo_task_debug' # Define a task for debug
+      else:
+          task_table_name = 'demo_task_v1' # Define a task for training
+      
+
+      def get_package_path():
+          return os.path.dirname(os.path.abspath(__file__))
+
+      rla_data_root = get_package_path() # Set the place to store the data items
+
+      rla_config = os.path.join(get_package_path(), 'rla_config.yaml')
+
+      ignore_file_path = os.path.join(get_package_path(), '.gitignore')
+
+      # Configure the exp_manager object with the specified settings
+      exp_manager.configure(task_table_name=task_table_name, ignore_file_path=ignore_file_path,
+                             rla_config=rla_config, data_root=rla_data_root)
+
+      exp_manager.log_files_gen() # Initialize the data items
+
+      exp_manager.print_args()
+
    ```
-   where ``ignore_file_path`` is a gitignore-style file, which is used to ignored files when backing up your project into ``code`` folder.
-   It is an optional parameter, and you can use your `.gitignore` file of your git repository  directly.
+   Note that ignore_file_path is a gitignore-style file used to ignore files when backing up your project into the code folder. It is an optional parameter, and you can use your project's .gitignore file directly.
     
-4. We add the generated data items to .gitignore to avoid pushing them into our git repo.
+4. Add the generated data items to your .gitignore file to avoid pushing them into your Git repository:
    ```gitignore
    **/tmp_data/**
    **/archive_tester/**
@@ -169,20 +182,38 @@ We build an example project to include most of the features of RLA, which can be
 
 We record scalars by `RLA.logger`: 
 ```python
+# Import the RLA logger to record scalars
 from RLA import logger
+# Import TensorFlow for creating summary data to log
 import tensorflow as tf
+# Import the time step holder, holding a global instance that tracks the current time step
 from RLA import time_step_holder
 
+# Iterate for 1000 time steps (or any number of time steps/epochs)
 for i in range(1000):
-    # time-steps (iterations)
+    # Update the time step holder with the current time step (iteration/epoch/whatever you need) value.
+    # You just need to set the value once when it is changed.
     time_step_holder.set_time(i)
-    # scalar variable
+    
+    # Set the scalar value to record
     value = 1
+    
+    # Record the scalar value using the RLA logger, with "k" as the key and the global time step instance in time_step_holder as the step value.
+    # This allows you to track the value of the scalar over time (e.g. during training).
     logger.record_tabular("k", value)
-    # tensorflow summary
+    
+    # Optionally, create a TensorFlow summary for the scalar value (this can be used for additional analysis or visualization).
     summary = tf.Summary()
+    
+    # Log the summary data to the RLA logger.
+    # This adds the scalar value to the log, along with any additional summary data (if present).
     logger.log_from_tf_summary(summary)
+    
+    # Dump the tabular data to the logger for storage and display.
+    # This saves the logged data to disk (or other storage location) and displays it in the console (if desired).
     logger.dump_tabular()
+
+
 ```
 **Record checkpoints**
 
