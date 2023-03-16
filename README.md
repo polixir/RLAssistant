@@ -14,8 +14,6 @@ RLA has decoupled from the training code and only some additional configurations
 
 The project is still in development. Welcome to join us. :)
 
-We maintain an RLA in https://github.com/polixir/RLAssistant in the future which will consider extra requirements needed in the team cooperation scenario.
-
 
 
 ## Design Principles of RLA
@@ -112,7 +110,7 @@ We also list the RL research projects using RLA as follows:
 
 ## Installation
 ```angular2html
-git clone https://github.com/xionghuichen/RLAssistant.git
+git clone https://github.com/polixir/RLAssistant.git
 cd RLAssistant
 pip install -e .
 ```
@@ -124,38 +122,51 @@ pip install -e .
 We build an example project to include most of the features of RLA, which can be seen in ./example/simplest_code. Now we summarize the steps to use it.
 
 ### Step1: Configuration. 
-1. We define the property of the database in `rla_config.yaml`. You can construct your YAML file based on the template in ./example/simplest_code/rla_config.yaml. 
-2. We define the property of the table in exp_manager.config. Before starting your experiment, you should configure the global object RLA.exp_manager like this:
+1. To configure the experiment "database", you need to create a YAML file rla_config.yaml. You can use the template provided in ./example/simplest_code/rla_config.yaml as a starting point.
+2. Before starting your experiment, you should configure the RLA.exp_manager object. Here's an example:
+
     ```python
-    from RLA import exp_manager
-    import os
-    kwargs = {'env_id': 'Hopper-v2', 'lr': 1e-3}
-    debug = False
-    exp_manager.set_hyper_param(**kwargs) # kwargs are the hyper-parameters for your experiment
-    exp_manager.add_record_param(["env_id"]) # add parts of hyper-parameters to name the index of data items for better readability.
-    
-    if debug: 
-        task_name = 'demo_task_debug' # define a task for debug.
-    else:
-        task_name = 'demo_task_v1' # define a task for training.
-   
-    def get_package_path():
-        return os.path.dirname(os.path.abspath(__file__))
+      from RLA import exp_manager
+      import os
 
-    rla_data_root = get_package_path() # the place to store the data items.
-   
-    rla_config = os.path.join(get_package_path(), 'rla_config.yaml')
+      kwargs = {'env_id': 'Hopper-v2', 'lr': 1e-3}
+      debug = False
 
-    ignore_file_path=os.path.join(get_package_path(), '.gitignore')
-    exp_manager.configure(task_table_name=task_name, ignore_file_path=ignore_file_path,
-                        rla_config=rla_config, data_root=rla_data_root)
-    exp_manager.log_files_gen() # initialize the data items.
-    exp_manager.print_args()
+      # Set hyperparameters for your experiment
+      exp_manager.set_hyper_param(**kwargs)
+
+      # Add parts of hyperparameters to name the index of data items for better readability
+      exp_manager.add_record_param(["env_id"])
+      
+      # To keep the conciseness of your experiment "database", we recommend creating an additional task table for debugging.
+      # When debugging a new feature, set the `debug` value to True, then the recorded experiments will be stored in a temporary location (`demo_task_debug` in this example), instead of mixing into your formal experiment "database". 
+      if debug:
+          task_table_name = 'demo_task_debug' # Define a task for debug
+      else:
+          task_table_name = 'demo_task_v1' # Define a task for training
+      
+
+      def get_package_path():
+          return os.path.dirname(os.path.abspath(__file__))
+
+      rla_data_root = get_package_path() # Set the place to store the data items
+
+      rla_config = os.path.join(get_package_path(), 'rla_config.yaml')
+
+      ignore_file_path = os.path.join(get_package_path(), '.gitignore')
+
+      # Configure the exp_manager object with the specified settings
+      exp_manager.configure(task_table_name=task_table_name, ignore_file_path=ignore_file_path,
+                             rla_config=rla_config, data_root=rla_data_root)
+
+      exp_manager.log_files_gen() # Initialize the data items
+
+      exp_manager.print_args()
+
    ```
-   where ``ignore_file_path`` is a gitignore-style file, which is used to ignored files when backing up your project into ``code`` folder.
-   It is an optional parameter, and you can use your `.gitignore` file of your git repository  directly.
+   Note that ignore_file_path is a gitignore-style file used to ignore files when backing up your project into the code folder. It is an optional parameter, and you can use your project's .gitignore file directly.
     
-4. We add the generated data items to .gitignore to avoid pushing them into our git repo.
+4. Add the generated data items to your .gitignore file to avoid pushing them into your Git repository:
    ```gitignore
    **/tmp_data/**
    **/archive_tester/**
@@ -171,24 +182,42 @@ We build an example project to include most of the features of RLA, which can be
 
 We record scalars by `RLA.logger`: 
 ```python
+# Import the RLA logger to record scalars
 from RLA import logger
+# Import TensorFlow for creating summary data to log
 import tensorflow as tf
+# Import the time step holder, holding a global instance that tracks the current time step
 from RLA import time_step_holder
 
+# Iterate for 1000 time steps (or any number of time steps/epochs)
 for i in range(1000):
-    # time-steps (iterations)
+    # Update the time step holder with the current time step (iteration/epoch/whatever you need) value.
+    # You just need to set the value once when it is changed.
     time_step_holder.set_time(i)
-    # scalar variable
+    
+    # Set the scalar value to record
     value = 1
+    
+    # Record the scalar value using the RLA logger, with "k" as the key and the global time step instance in time_step_holder as the step value.
+    # This allows you to track the value of the scalar over time (e.g. during training).
     logger.record_tabular("k", value)
-    # tensorflow summary
+    
+    # Optionally, create a TensorFlow summary for the scalar value (this can be used for additional analysis or visualization).
     summary = tf.Summary()
+    
+    # Log the summary data to the RLA logger.
+    # This adds the scalar value to the log, along with any additional summary data (if present).
     logger.log_from_tf_summary(summary)
+    
+    # Dump the tabular data to the logger for storage and display.
+    # This saves the logged data to disk (or other storage location) and displays it in the console (if desired).
+    logger.dump_tabular()
+
 
 ```
 **Record checkpoints**
 
-We save checkpoints of neural networks by `exp_manager.save_checkpoint`.
+In order to save checkpoints of neural networks in your experiment, you can use the ``exp_manager.save_checkpoint`` method. Here's an example code snippet: 
 ```python
 from RLA import exp_manager
 exp_manager.new_saver()
@@ -197,23 +226,30 @@ for i in range(1000):
     if i % 10 == 0:
         exp_manager.save_checkpoint()
 ```
+This code creates a new saver object and saves a checkpoint every 10 iterations of the loop.
 
-**Record other types of data** [under developing]
+**Record other types of data** 
 
-Currently, we can record complex-structure data based on tensorboard: 
+Apart from recording checkpoints, RLA also provides support for recording other types of data. Currently, you can record complex-structured data using tensorboard. Here's an example code snippet:
+
 ```python
-# from tensorflow summary
 import tensorflow as tf
 from RLA import logger
+
+# Record data from tensorflow summary
 summary = tf.Summary()
 logger.log_from_tf_summary(summary)
-# from tensorboardX writer
+
+# Record data using tensorboardX writer
 kwargs = {'tag': 'aa'}
 logger.get_tbx_writer().add_audio(**kwargs)
+
 ```
 
-We will develop APIs to record common-used complex-structure data in RLA.easy_log.complex_data_recorder.
-Now we give a MatplotlibRecorder tool to manage your figures generated by matplotlib:
+In the future, RLA plans to develop APIs to record commonly-used complex-structured data in ``RLA.easy_log.complex_data_recorder``.
+
+In addition, RLA also provides the ``MatplotlibRecorder`` tool to manage your figures generated by Matplotlib. Here's an example code snippet:
+
 
 ```python
 from RLA import MatplotlibRecorder as mpr
@@ -222,7 +258,8 @@ def plot_func():
    plt.plot([1,1,1], [2,2,2])
 mpr.pretty_plot_wrapper('func', plot_func, xlabel='x', ylabel='y', title='react test', )
 ```
-The figure plotted by plot_func will be saved in the "results" directory.
+
+This code plots a figure using Matplotlib and saves it in the "results" directory.
 
 ### Step3: handle your historical experiments. 
 
@@ -233,11 +270,10 @@ Currently, we develop the query tools based on two common scenarios: result visu
 **Result visualization**:
    1. Tensorboard: We can use tensorboard/tensorboardX to view the recorded logs. The event of tensorboard will be saved in `${data_root}/log/${task_name}/${index_name}/tb/events`. 
       We can view the results in tensorboard by: `tensorboard --logdir ${data_root}/log/${task_name}`.
-      For example, lanuch tensorboard by `tensorboard --logdir ./example/simplest_code/log/demo_task/2022/03`. We can see results:
+      For example, lanuch tensorboard by `tensorboard --logdir ./example/simplest_code/log/demo_task/2022/03`. The resulting visualization will look like this:
         ![img.png](resource/demo-tb-res.png)
-   2. Easy_plot toolkit: 
-       **We recommend the users maintain their research projects via some jupyter notebooks. You can record your ideas, surmises, related empirical evidence, and benchmark results in a notebook together.**  We develop high-level APIs to load the CSV files of the experiments (stored in `${data_root}/log/${task_name}/${index_name}/progress.csv`) and group the curves by custom keys.    We give common use cases of the plotter in https://github.com/xionghuichen/RLAssistant/blob/main/test/test_plot.ipynb
-      The result will be something like this:
+   2. Easy_plot toolkit: We recommend using Jupyter notebooks to maintain your research projects, where you can record your ideas, surmises, related empirical evidence, and benchmark results together. We provide high-level APIs to load the CSV files of the experiments (stored in ${data_root}/log/${task_name}/${index_name}/progress.csv) and group the curves by custom keys. We have provided common use cases of the plotter in https://github.com/xionghuichen/RLAssistant/blob/main/test/test_plot.ipynb . 
+     The resulting visualization will look like this:
         ![img.png](resource/demo-easy-to-plot-res.png)
    3. View data in "results" directory directly: other types of data are stored in `${data_root}/results/${task_name}/${index_name}`
     ![img.png](resource/demo-results-res.png)
@@ -250,11 +286,11 @@ You can use the `Compare with...` method in Pycharm or any `folder comparison` e
 
 **Modify**
 
-Usually, it is unnecessary to change the content of experiment logs. In our practice, a common scenario is to load the historical experiment/results to resume the training or give to downstream tasks. In RLA, we develop a tool for different requirements of experiment loading, which is in `RLA.exp_loader`. It can be easily used to:
-1. load a pretrained model for another task (e.g., validation);
-2. resume an experiment;
-3. resume an experiment with other settings.
+In general, it is unnecessary to change the contents of experiment logs. In our practice, a common scenario is to load  historical experiments/modules to resume training or for downstream tasks. In RLA, we provide a tool for different requirements of experiment loading, which is located in RLA.exp_loader. This tool can be used easily to:
 
+- Load a pretrained model for another task (e.g., validation).
+- Resume an experiment.
+- Resume an experiment with different settings.
 
 **Batch Management**
 
@@ -312,3 +348,9 @@ We write the usage of RLA as unit tests. You can check the scripts in `test` fol
 - [ ] download/upload experiment logs through timestamp.
 - [ ] allow sync LOG only or ALL TYPE LOGS.
 - [ ] add unit_test to ckp loader.
+
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=polixir/RLAssistant&type=Date)](https://star-history.com/#polixir/RLAssistant&Date)
+
