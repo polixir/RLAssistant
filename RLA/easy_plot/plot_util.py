@@ -412,9 +412,10 @@ def plot_results(
         ncols = int(math.ceil(N / nrows))
     figsize = figsize or (7 * ncols, 6 * nrows)
 
-    legend_height = 0.12
-    subfigsize = (1 / ncols, figsize[1] / (figsize[1] + len(allresults) * legend_height) / nrows)
-    figsize = (figsize[0], figsize[1] + len(allresults) * legend_height)
+    legend_height = 0.11
+    figpercentage = (1, figsize[1] / (figsize[1] + len(allresults) * legend_height))
+    subfigsize =    (figpercentage[0] / ncols, figpercentage[1] / nrows)
+    figsize =       (figsize[0], figsize[1] + len(allresults) * legend_height)
 
     # if legend_outside:
     #     figsize = list(figsize)
@@ -678,11 +679,11 @@ def plot_results(
             for isplit in range(ncols * nrows):
                 idx_row = isplit // ncols
                 idx_col = isplit % ncols
-                col_scale = 0.8
-                row_scale = 0.8
+                col_scale = 0.78
+                row_scale = 0.78
                 ax = axarr[idx_row][idx_col]
                 ax.set_position([idx_col * subfigsize[0] + (1 - col_scale) / (ncols * 2),
-                                 1 - (idx_row + 1) * subfigsize[1] + (1 - row_scale) / (nrows * 2),
+                                 1 - (idx_row + 1) * subfigsize[1] + figpercentage[1] * (1 - row_scale) / (nrows * 2),
                                  col_scale * subfigsize[0], row_scale * subfigsize[1]])
     #     plt.gcf().subplots_adjust(bottom=0.12, left=0.12)
     # if pretty:
