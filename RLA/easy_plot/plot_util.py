@@ -412,6 +412,7 @@ def plot_results(
         ncols = int(math.ceil(N / nrows))
     figsize = figsize or (7 * ncols, 6 * nrows)
 
+
     legend_height = 0.11
     figpercentage = (1, figsize[1] / (figsize[1] + len(allresults) * legend_height))
     subfigsize =    (figpercentage[0] / ncols, figpercentage[1] / nrows)
