@@ -311,12 +311,17 @@ class Tester(object,):
             if '.' in k:
                 try:
                     sub_k_list = k.split('.')
-                    v = self.hyper_param[sub_k_list[0]]
+                    sub_k = sub_k_list[0]
+                    v = self.hyper_param[sub_k]
                     for sub_k in sub_k_list[1:]:
                         v = v[sub_k]
                     self.hyper_param_record.append(str(k) + '=' + str(v).replace('[', '{').replace(']', '}').replace('/', '_'))
                 except KeyError as e:
-                    print("do not include dot ('.') in your hyperparemeter name. current parsed key is:", k)
+                    print(f"Can not find a matching key."
+                          "\n Hint: do not include dot ('.') in your hyperparemeter name."
+                          "\n the current parsed key is:", k,
+                          "\n  while the recorded hyper parameters are")
+                    self.print_args()
             else:
                 self.hyper_param_record.append(str(k) + '=' + str(self.hyper_param[k]).replace('[', '{').replace(']', '}').replace('/', '_'))
 
