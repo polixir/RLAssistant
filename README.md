@@ -256,7 +256,7 @@ from RLA import MatplotlibRecorder as mpr
 def plot_func():
    import matplotlib.pyplot as plt
    plt.plot([1,1,1], [2,2,2])
-mpr.pretty_plot_wrapper('func', plot_func, xlabel='x', ylabel='y', title='react test', )
+mpr.pretty_plot_wrapper('func', plot_func, pretty_plot=True, xlabel='x', ylabel='y', title='react test')
 ```
 
 This code plots a figure using Matplotlib and saves it in the "results" directory.
