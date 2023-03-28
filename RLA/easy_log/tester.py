@@ -316,7 +316,7 @@ class Tester(object,):
                         v = v[sub_k]
                     self.hyper_param_record.append(str(k) + '=' + str(v).replace('[', '{').replace(']', '}').replace('/', '_'))
                 except KeyError as e:
-                    print("do not include dot ('.') in your hyperparemeter name")
+                    print("do not include dot ('.') in your hyperparemeter name. current parsed key is:", k)
             else:
                 self.hyper_param_record.append(str(k) + '=' + str(self.hyper_param[k]).replace('[', '{').replace(']', '}').replace('/', '_'))
 
