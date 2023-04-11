@@ -16,7 +16,7 @@ import dill
 
 import json
 from RLA.easy_log.tester import Tester
-
+from RLA.utils.utils import get_dir_seperator
 class Filter(object):
     ALL = 'all'
     SMALL_TIMESTEP = 'small_ts'
@@ -214,8 +214,9 @@ class ArchiveLogTool(BasicLogTool):
                 empty = False
                 if os.path.exists(root_dir):
                     # remove the overlapped path.
+                    septor = get_dir_seperator()
                     archiving_target = osp.join(archive_root_dir, root_dir[prefix_len+1:])
-                    archiving_target_dir = '/'.join(archiving_target.split('/')[:-1])
+                    archiving_target_dir = septor.join(archiving_target.split(septor)[:-1])
                     os.makedirs(archiving_target_dir, exist_ok=True)
                     if os.path.isdir(root_dir):
                         if not show:
@@ -269,21 +270,23 @@ class MigrateLogTool(BasicLogTool):
                 if os.path.exists(root_dir):
                     # remove the overlapped path.
                     archiving_target = osp.join(target_root_dir, root_dir[prefix_len+1:])
-                    archiving_target_dir = '/'.join(archiving_target.split('/')[:-1])
+
+                    septor = get_dir_seperator()
+                    archiving_target_dir = septor.join(archiving_target.split(septor)[:-1])
+                    print("target dir", archiving_target_dir)
                     os.makedirs(archiving_target_dir, exist_ok=True)
                     if os.path.isdir(root_dir):
+                        print("copy dir {}, to {}".format(root_dir, archiving_target))
                         if not show:
                             # os.makedirs(archiving_target, exist_ok=True)
                             try:
                                 shutil.copytree(root_dir, archiving_target)
                             except FileExistsError as e:
                                 print(e)
-
-                        print("copy dir {}, to {}".format(root_dir, archiving_target))
                     else:
+                        print("copy file {}, to {}".format(root_dir, archiving_target))
                         if not show:
                             shutil.copy(root_dir, archiving_target)
-                        print("copy file {}, to {}".format(root_dir, archiving_target))
                 else:
                     print("no dir {}".format(root_dir))
             if empty: print("empty regex {}".format(root_dir_regex))
