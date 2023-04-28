@@ -309,6 +309,7 @@ class Tester(object,):
     def add_record_param(self, keys):
         for k in keys:
             if '.' in k:
+                sub_k = None
                 try:
                     sub_k_list = k.split('.')
                     sub_k = sub_k_list[0]
@@ -317,10 +318,9 @@ class Tester(object,):
                         v = v[sub_k]
                     self.hyper_param_record.append(str(k) + '=' + str(v).replace('[', '{').replace(']', '}').replace('/', '_'))
                 except KeyError as e:
-                    print(f"Can not find a matching key."
+                    print(f"the current key to parsed is: {k}. Can not find a matching key for {sub_k}."
                           "\n Hint: do not include dot ('.') in your hyperparemeter name."
-                          "\n the current parsed key is:", k,
-                          "\n  while the recorded hyper parameters are")
+                          "\n The recorded hyper parameters are")
                     self.print_args()
             else:
                 self.hyper_param_record.append(str(k) + '=' + str(self.hyper_param[k]).replace('[', '{').replace(']', '}').replace('/', '_'))
