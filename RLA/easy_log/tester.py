@@ -26,7 +26,7 @@ import yaml
 import shutil
 import argparse
 from typing import Dict, List, Tuple, Type, Union, Optional
-from RLA.utils.utils import deprecated_alias, load_yaml
+from RLA.utils.utils import deprecated_alias, load_yaml, get_dir_seperator
 from RLA.const import DEFAULT_X_NAME, FRAMEWORK
 import pathspec
 
@@ -150,10 +150,11 @@ class Tester(object,):
         logger.info("private_config: ")
         self.dl_framework = self.private_config["DL_FRAMEWORK"]
         self.is_master_node = is_master_node
-
+        self.septor = get_dir_seperator()
         if code_root is None:
             if isinstance(rla_config, str):
-                self.project_root = "/".join(rla_config.split("/")[:-1])
+
+                self.project_root = self.septor.join(rla_config.split(self.septor)[:-1])
             else:
                 raise NotImplementedError("If you pass the rla_config dict directly, "
                                           "you should define the root of your codebase (for backup) explicitly by pass the code_root.")
