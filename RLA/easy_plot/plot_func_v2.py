@@ -92,14 +92,14 @@ def plot_func(data_root:str, task_table_name:str, regs:list, split_keys:list, me
                 continue
             assert len(result) == 1
             result = result[0]
-            if verbose:
-                print("find log", v.dirname)
             counter += 1
             if os.path.exists(osp.join(v.dirname, HYPARAM + '.json')):
                 with open(osp.join(v.dirname, HYPARAM + '.json')) as f:
                     result.hyper_param = json.load(f)
             else:
                 result.hyper_param = tester_dict[k].exp_manager.hyper_param
+            if verbose:
+                print("find log", v.dirname, "[parsed key]", key_to_legend_fn(result.hyper_param, split_keys, '', False))
             results.append(result)
             reg_group[reg].append(result)
         print("find log number", counter)
