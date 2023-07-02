@@ -232,7 +232,8 @@ def load_results(root_dir_or_dirs, names, x_bound, enable_progress=True, use_buf
                                     existed_names = []
                                     for name in names:
                                         if name not in slim_chunk.columns:
-                                            print("[error keys]: {}".format(name))
+                                            if verbose:
+                                                print("[error keys]: {} in experiment: {}".format(name, dirname))
                                         else:
                                             existed_names.append(name)
                                     if len(existed_names) == 0:
@@ -473,7 +474,9 @@ def plot_results(
                     if resample:
                         x, y, counts = symmetric_ema(x, y, x[0], x[-1], resample, decay_steps=smooth_step)
                     l, = ax.plot(x, y, color=colors[groups.index(group) % len(colors)])
-                    g2l[group] = l
+
+                    if len(x) > 1:
+                        g2l[group] = l
 
         if average_group:
             for group in sorted(groups):
@@ -528,13 +531,15 @@ def plot_results(
                                                       markersize=10)
                 else:
                     l, = axarr[idx_row][idx_col].plot(usex, ymean, color=color)
-                g2l[group] = l
-                if shaded_err:
-                    g2lf[group + '-se'] = [ax.fill_between(usex, ymean - ystderr, ymean + ystderr, color=color, alpha=.2), ymean, ystderr]
-                if shaded_std:
-                    g2lf[group + '-ss'] = [ax.fill_between(usex, ymean - ystd,    ymean + ystd,    color=color, alpha=.2), ymean, ystd]
-                if shaded_range:
-                    g2lf[group + '-sr'] = [ax.fill_between(usex, ymin,    ymax,    color=color, alpha=.1), ymin, ymax]
+
+                if len(x) > 1:
+                    g2l[group] = l
+                    if shaded_err:
+                        g2lf[group + '-se'] = [ax.fill_between(usex, ymean - ystderr, ymean + ystderr, color=color, alpha=.2), ymean, ystderr]
+                    if shaded_std:
+                        g2lf[group + '-ss'] = [ax.fill_between(usex, ymean - ystd,    ymean + ystd,    color=color, alpha=.2), ymean, ystd]
+                    if shaded_range:
+                        g2lf[group + '-sr'] = [ax.fill_between(usex, ymin,    ymax,    color=color, alpha=.1), ymin, ymax]
         if not pretty:
             ax.set_title(sk)
         if split_by_metrics:

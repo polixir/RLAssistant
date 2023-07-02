@@ -626,7 +626,7 @@ class Tester(object,):
         end_time = time.time()
         start_time = self._rc_start_time[name]
         logger.record_tabular("time_used/{}".format(name), end_time - start_time)
-        logger.info("[test] func {0} time used {1:.2f}".format(name, end_time - start_time))
+        # logger.info("[test] func {0} time used {1:.2f}".format(name, end_time - start_time))
         del self._rc_start_time[name]
 
     # Saver manger.

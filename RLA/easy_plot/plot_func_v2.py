@@ -18,6 +18,9 @@ from RLA.easy_log.const import LOG, ARCHIVE_TESTER, OTHER_RESULTS, HYPARAM
 
 
 def default_key_to_legend(parse_dict, split_keys, y_name, use_y_name=True):
+    for k in split_keys:
+        if k not in parse_dict.keys():
+            parse_dict[k] = 'NF'
     task_split_key = '.'.join(f'{k}={parse_dict[k]}' for k in split_keys)
     if use_y_name:
         return task_split_key + ' eval:' + y_name
@@ -99,7 +102,7 @@ def plot_func(data_root:str, task_table_name:str, regs:list, split_keys:list, me
             else:
                 result.hyper_param = tester_dict[k].exp_manager.hyper_param
             if verbose:
-                print("find log", v.dirname, "[parsed key]", key_to_legend_fn(result.hyper_param, split_keys, '', False))
+                print("find log", v.dirname, "\n [parsed key]", key_to_legend_fn(result.hyper_param, split_keys, '', False))
             results.append(result)
             reg_group[reg].append(result)
         print("find log number", counter)
