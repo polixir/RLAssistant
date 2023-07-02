@@ -18,6 +18,19 @@ from RLA.easy_log.const import LOG, ARCHIVE_TESTER, OTHER_RESULTS, HYPARAM
 
 
 def default_key_to_legend(parse_dict, split_keys, y_name, use_y_name=True):
+    """
+    Formats the keys into a string to be used as legend in a plot.
+    If a key is not in parse_dict, it's added with value 'NF'.
+
+    :param parse_dict: Dictionary with keys to be formatted into a legend.
+    :type parse_dict: Dict
+    :param split_keys: List of keys to be checked in parse_dict.
+    :type split_keys: List
+    :param y_name: Value to be appended to the legend.
+    :type y_name: str
+    :param use_y_name: If True, appends y_name to the legend.
+    :type use_y_name: bool, default to True
+    """
     for k in split_keys:
         if k not in parse_dict.keys():
             parse_dict[k] = 'NF'
@@ -47,20 +60,22 @@ def plot_func(data_root:str, task_table_name:str, regs:list, split_keys:list, me
     The function also supports several configure to post-process your log data, including resample, smooth_step, scale_dict, key_to_legend_fn, etc.
     The function also supports several configure to beautify the figure, see the parameters of plot_util.plot_results.
 
-    :param data_root:
-    :type data_root:
-    :param task_table_name:
-    :type task_table_name:
-    :param regs:
-    :type regs:
-    :param split_keys:
-    :type split_keys:
-    :param metrics:
-    :type metrics:
-    :param use_buf: use the preloaded csv data instead of loading from scratch
-    :type use_buf: bool
-    :param x_bound: drop the collected with time-step larger than x_bound.
-    :param xlabel: set the label of the y axes.
+    :param data_root: Root directory for the data.
+    :type data_root: str
+    :param task_table_name: Task table name.
+    :type task_table_name: str
+    :param regs: List of regular expressions used for matching files/directories.
+    :type regs: list
+    :param split_keys: List of keys to group experiments.
+    :type split_keys: list
+    :param metrics: List of metrics to be plotted.
+    :type metrics: list
+    :param use_buf: If True, uses preloaded csv data instead of loading from scratch.
+    :type use_buf: bool, default to False
+    :param verbose: If True, prints detailed log information during the process.
+    :type verbose: bool, default to True
+    :param x_bound: Drops the data collected with time-step larger than x_bound.
+    :type x_bound: Optional[int]
     :type xlabel: Optional[str]
     :param ylabel: set the label of the y axes.
     :type ylabel: Optional[str,list]
