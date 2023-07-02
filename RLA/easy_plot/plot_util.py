@@ -7,6 +7,7 @@ import pandas
 import seaborn as sns
 from collections import defaultdict, namedtuple
 from RLA.easy_log.logger import read_json, read_csv
+from RLA.easy_plot.result_cls import CsvResult
 sns.set_style('darkgrid', {'legend.frameon':True})
 
 
@@ -154,14 +155,6 @@ def symmetric_ema(xolds, yolds, low=None, high=None, n=512, decay_steps=1., low_
 # Result = namedtuple('Result', 'monitor progress dirname metadata hyper_param')
 # Result.__new__.__defaults__ = (None,) * len(Result._fields)
 
-class Result:
-    def __init__(self, monitor=None, progress=None, dirname=None, metadata=None, hyper_param=None):
-        self.monitor = monitor
-        self.progress = progress
-        self.dirname = dirname
-        self.metadata = metadata
-        self.hyper_param = hyper_param
-
 def word_replace(string):
     return string.replace('/', '--').replace("\'", "||")
 
@@ -260,7 +253,7 @@ def load_results(root_dir_or_dirs, names, x_bound, enable_progress=True, use_buf
 
 
                 if result.get('progress') is not None:
-                    allresults.append(Result(**result))
+                    allresults.append(CsvResult(**result))
                     if verbose:
                         print('successfully loaded %s'%dirname)
 

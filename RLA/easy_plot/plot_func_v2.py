@@ -14,7 +14,7 @@ from RLA.const import DEFAULT_X_NAME
 from RLA.query_tool import experiment_data_query, extract_valid_index
 from RLA.easy_plot import plot_util
 from RLA.easy_log.const import LOG, ARCHIVE_TESTER, OTHER_RESULTS, HYPARAM
-
+from RLA.easy_plot.utils import results_loader
 
 
 def default_key_to_legend(parse_dict, split_keys, y_name, use_y_name=True):
@@ -40,6 +40,14 @@ def default_key_to_legend(parse_dict, split_keys, y_name, use_y_name=True):
     else:
         return task_split_key
 
+def meta_csv_data_loader_func(dirname, select_names, x_bound, use_buf):
+    result = plot_util.load_results(dirname, names=select_names, x_bound=x_bound, use_buf=use_buf)
+    if len(result) == 0:
+        return None
+    assert len(result) == 1
+    result = result[0]
+    return result
+
 def plot_func(data_root:str, task_table_name:str, regs:list, split_keys:list, metrics:list,
               use_buf=False, verbose=True,
               x_bound: Optional[int]=None,
@@ -47,8 +55,7 @@ def plot_func(data_root:str, task_table_name:str, regs:list, split_keys:list, me
               scale_dict: Optional[dict] = None, regs2legends: Optional[list] = None,
               hp_filter_dict: Optional[dict] = None,
               key_to_legend_fn: Optional[Callable] = default_key_to_legend,
-              split_by_metrics=True,
-              save_name: Optional[str] = None, *args, **kwargs):
+              split_by_metrics=True, save_name: Optional[str]=None, *args, **kwargs):
     """
     A high-level matplotlib plotter.
     The function is to load your experiments and plot curves.
@@ -99,48 +106,15 @@ def plot_func(data_root:str, task_table_name:str, regs:list, split_keys:list, me
     :return:
     :rtype:
     """
-    results = []
+    csv_data_loader_func = lambda dirname: meta_csv_data_loader_func(dirname, select_names=metrics + [DEFAULT_X_NAME],
+                                                                     x_bound=[DEFAULT_X_NAME, x_bound], use_buf=use_buf)
+    results, reg_group = results_loader(data_root, task_table_name, regs, hp_filter_dict, csv_data_loader_func, verbose)
     reg_group = {}
-    for reg in regs:
-        reg_group[reg] = []
-        print("searching", reg)
-        tester_dict = experiment_data_query(data_root, task_table_name, reg, ARCHIVE_TESTER)
-        log_dict = experiment_data_query(data_root, task_table_name, reg, LOG)
-        counter = 0
-        for k, v in log_dict.items():
-            result = plot_util.load_results(v.dirname, names=metrics + [DEFAULT_X_NAME],
-                                   x_bound=[DEFAULT_X_NAME, x_bound], use_buf=use_buf)
-            if len(result) == 0:
-                continue
-            assert len(result) == 1
-            result = result[0]
-            if os.path.exists(osp.join(v.dirname, HYPARAM + '.json')):
-                with open(osp.join(v.dirname, HYPARAM + '.json')) as f:
-                    result.hyper_param = json.load(f)
-            else:
-                result.hyper_param = tester_dict[k].exp_manager.hyper_param
-            if hp_filter_dict is not None:
-                skip = False
-                for k_hpf, v_hpf in hp_filter_dict.items():
-                    v_hpf = [str(v) for v in v_hpf]
-                    if k_hpf not in result.hyper_param.keys():
-                        if verbose:
-                            print(f"[WARN] the key {k_hpf} in hp_filter_dict can not be found in the experiment log", v.dirname)
-                    else:
-                        target_v = result.hyper_param[k_hpf]
-                        if str(target_v) not in v_hpf:
-                            if verbose:
-                                print(f"skip the experiment log {v.dirname} which {k_hpf} is {target_v} not in {v_hpf}")
-                            skip = True
-                            break
-                if skip:
-                    continue
-            counter += 1
-            if verbose:
-                print("find log", v.dirname, "\n [parsed key]", key_to_legend_fn(result.hyper_param, split_keys, '', False))
-            results.append(result)
-            reg_group[reg].append(result)
-        print("find log number", counter)
+    if verbose:
+        for k, v in reg_group.items():
+            print(f"for regex {k}, we have the following logs:")
+            for res in v:
+                print("find log", res.dirname, "\n [parsed key]", key_to_legend_fn(res.hyper_param, split_keys, '', False))
     final_scale_dict = {}
     for m in metrics:
         final_scale_dict[m] = lambda x: x
