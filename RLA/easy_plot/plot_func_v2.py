@@ -32,6 +32,7 @@ def plot_func(data_root:str, task_table_name:str, regs:list, split_keys:list, me
               x_bound: Optional[int]=None,
               xlabel: Optional[str] = DEFAULT_X_NAME, ylabel: Optional[Union[str, list]] = None,
               scale_dict: Optional[dict] = None, regs2legends: Optional[list] = None,
+              hp_filter_dict: Optional[dict] = None,
               key_to_legend_fn: Optional[Callable] = default_key_to_legend,
               split_by_metrics=True,
               save_name: Optional[str] = None, *args, **kwargs):
@@ -63,6 +64,9 @@ def plot_func(data_root:str, task_table_name:str, regs:list, split_keys:list, me
     :type xlabel: Optional[str]
     :param ylabel: set the label of the y axes.
     :type ylabel: Optional[str,list]
+    :param hp_filter_dict: a dict to filter your log.
+    e.g., hp_filter_dict= {'learning_rate': [0.001, 0.01, 0.1]} will select the logs where the learning rate is 0.001, 0.01, or 0.1.
+    :type hp_filter_dict: Optional[dict]
     :param scale_dict: a function dict, to map the value of the metrics through customize functions.
     e.g.,set metrics = ['return'], scale_dict = {'return': lambda x: np.log(x)}, then we will plot a log-scale return.
     :type scale_dict: Optional[dict]
@@ -95,12 +99,28 @@ def plot_func(data_root:str, task_table_name:str, regs:list, split_keys:list, me
                 continue
             assert len(result) == 1
             result = result[0]
-            counter += 1
             if os.path.exists(osp.join(v.dirname, HYPARAM + '.json')):
                 with open(osp.join(v.dirname, HYPARAM + '.json')) as f:
                     result.hyper_param = json.load(f)
             else:
                 result.hyper_param = tester_dict[k].exp_manager.hyper_param
+            if hp_filter_dict is not None:
+                skip = False
+                for k_hpf, v_hpf in hp_filter_dict.items():
+                    v_hpf = [str(v) for v in v_hpf]
+                    if k_hpf not in result.hyper_param.keys():
+                        if verbose:
+                            print(f"[WARN] the key {k_hpf} in hp_filter_dict can not be found in the experiment log", v.dirname)
+                    else:
+                        target_v = result.hyper_param[k_hpf]
+                        if str(target_v) not in v_hpf:
+                            if verbose:
+                                print(f"skip the experiment log {v.dirname} which {k_hpf} is {target_v} not in {v_hpf}")
+                            skip = True
+                            break
+                if skip:
+                    continue
+            counter += 1
             if verbose:
                 print("find log", v.dirname, "\n [parsed key]", key_to_legend_fn(result.hyper_param, split_keys, '', False))
             results.append(result)
