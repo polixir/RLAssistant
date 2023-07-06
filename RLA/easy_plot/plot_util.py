@@ -212,7 +212,8 @@ def load_results(root_dir_or_dirs, names, x_bound, enable_progress=True, use_buf
                             encode_names = word_replace(encode_names)
                             buf_csv = osp.join(dirname, "progress-{}.csv".format(encode_names))
                             if osp.exists(buf_csv) and use_buf:
-                                print("read buf: {}".format(buf_csv))
+                                if verbose:
+                                    print("read buf: {}".format(buf_csv))
                                 raw_df = read_csv(buf_csv)
                             else:
                                 reader = pd.read_csv(progcsv, chunksize=5000,  quoting=csv.QUOTE_NONE,
@@ -677,12 +678,20 @@ def plot_results(
         # plt.sca(f)
         if pretty:
             if not split_by_metrics or len(metrics) == 1:
-                texts.append(f.supylabel(ylabel, fontsize=20, horizontalalignment='center'))
+
+                try:
+                    texts.append(f.supylabel(ylabel, fontsize=20, horizontalalignment='center'))
+
+                except AttributeError as e:
+                    texts.append(plt.ylabel(ylabel, fontsize=20))
             else:
                 pass
         else:
             if not split_by_metrics or len(metrics) == 1:
-                f.supylabel(ylabel, horizontalalignment='center')
+                try:
+                    f.supylabel(ylabel, horizontalalignment='center')
+                except AttributeError as e:
+                    plt.ylabel(ylabel)
     if title is not None:
         if pretty:
             texts.append(plt.title(title, fontsize=18))

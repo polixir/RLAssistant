@@ -10,19 +10,19 @@ from RLA.easy_plot import plot_util
 from RLA.easy_log.const import LOG, ARCHIVE_TESTER, OTHER_RESULTS, HYPARAM
 from RLA.easy_plot.result_cls import Result
 
-def results_loader(data_root, task_table_name, regs, hp_filter_dict, data_loader_func, verbose):
+def results_loader(data_root, task_table_name, regs, hp_filter_dict, data_loader_func, verbose, data_type):
     results = []
     reg_group = {}
     for reg in regs:
         reg_group[reg] = []
         print("searching", reg)
         tester_dict = experiment_data_query(data_root, task_table_name, reg, ARCHIVE_TESTER)
-        log_dict = experiment_data_query(data_root, task_table_name, reg, LOG)
+        log_dict = experiment_data_query(data_root, task_table_name, reg, data_type)
         counter = 0
         for k, v in log_dict.items():
-            result = data_loader_func(v.dirname)
+            result = data_loader_func(v)
             if result is None: continue
-            assert isinstance(result, Result)
+            assert isinstance(result, Result), type(result)
             # add hyper parameters
             if os.path.exists(osp.join(v.dirname, HYPARAM + '.json')):
                 with open(osp.join(v.dirname, HYPARAM + '.json')) as f:

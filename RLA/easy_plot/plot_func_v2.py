@@ -15,7 +15,7 @@ from RLA.query_tool import experiment_data_query, extract_valid_index
 from RLA.easy_plot import plot_util
 from RLA.easy_log.const import LOG, ARCHIVE_TESTER, OTHER_RESULTS, HYPARAM
 from RLA.easy_plot.utils import results_loader
-
+from RLA.query_tool import LogQueryResult
 
 def default_key_to_legend(parse_dict, split_keys, y_name, use_y_name=True):
     """
@@ -40,7 +40,9 @@ def default_key_to_legend(parse_dict, split_keys, y_name, use_y_name=True):
     else:
         return task_split_key
 
-def meta_csv_data_loader_func(dirname, select_names, x_bound, use_buf):
+def meta_csv_data_loader_func(query_res, select_names, x_bound, use_buf):
+    assert isinstance(query_res, LogQueryResult)
+    dirname = query_res.dirname
     result = plot_util.load_results(dirname, names=select_names, x_bound=x_bound, use_buf=use_buf)
     if len(result) == 0:
         return None
@@ -49,7 +51,7 @@ def meta_csv_data_loader_func(dirname, select_names, x_bound, use_buf):
     return result
 
 def plot_func(data_root:str, task_table_name:str, regs:list, split_keys:list, metrics:list,
-              use_buf=False, verbose=True,
+              use_buf=False, verbose=False, summarize_res=True,
               x_bound: Optional[int]=None,
               xlabel: Optional[str] = DEFAULT_X_NAME, ylabel: Optional[Union[str, list]] = None,
               scale_dict: Optional[dict] = None, regs2legends: Optional[list] = None,
@@ -108,9 +110,8 @@ def plot_func(data_root:str, task_table_name:str, regs:list, split_keys:list, me
     """
     csv_data_loader_func = lambda dirname: meta_csv_data_loader_func(dirname, select_names=metrics + [DEFAULT_X_NAME],
                                                                      x_bound=[DEFAULT_X_NAME, x_bound], use_buf=use_buf)
-    results, reg_group = results_loader(data_root, task_table_name, regs, hp_filter_dict, csv_data_loader_func, verbose)
-    reg_group = {}
-    if verbose:
+    results, reg_group = results_loader(data_root, task_table_name, regs, hp_filter_dict, csv_data_loader_func, verbose, data_type=LOG)
+    if summarize_res:
         for k, v in reg_group.items():
             print(f"for regex {k}, we have the following logs:")
             for res in v:

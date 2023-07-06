@@ -59,5 +59,15 @@ def load_yaml(path):
         private_config = yaml.safe_load(fs)
     return private_config
 
+def set_or_append(dict_obj, key, value):
+    if key not in dict_obj.keys():
+        dict_obj[key] = [value]
+    else:
+        dict_obj[key].append(value)
+
+def set_or_keep(dict_obj, key, value):
+    if key not in dict_obj.keys():
+        dict_obj[key] = value
+
 def optional_set(new_val, old_val):
     return new_val if new_val is not None else old_val
