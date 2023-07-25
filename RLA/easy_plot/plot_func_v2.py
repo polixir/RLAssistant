@@ -14,24 +14,50 @@ from RLA.const import DEFAULT_X_NAME
 from RLA.query_tool import experiment_data_query, extract_valid_index
 from RLA.easy_plot import plot_util
 from RLA.easy_log.const import LOG, ARCHIVE_TESTER, OTHER_RESULTS, HYPARAM
-
-
+from RLA.easy_plot.utils import results_loader
+from RLA.query_tool import LogQueryResult
 
 def default_key_to_legend(parse_dict, split_keys, y_name, use_y_name=True):
+    """
+    Formats the keys into a string to be used as legend in a plot.
+    If a key is not in parse_dict, it's added with value 'NF'.
+
+    :param parse_dict: Dictionary with keys to be formatted into a legend.
+    :type parse_dict: Dict
+    :param split_keys: List of keys to be checked in parse_dict.
+    :type split_keys: List
+    :param y_name: Value to be appended to the legend.
+    :type y_name: str
+    :param use_y_name: If True, appends y_name to the legend.
+    :type use_y_name: bool, default to True
+    """
+    for k in split_keys:
+        if k not in parse_dict.keys():
+            parse_dict[k] = 'NF'
     task_split_key = '.'.join(f'{k}={parse_dict[k]}' for k in split_keys)
     if use_y_name:
         return task_split_key + ' eval:' + y_name
     else:
         return task_split_key
 
+def meta_csv_data_loader_func(query_res, select_names, x_bound, use_buf):
+    assert isinstance(query_res, LogQueryResult)
+    dirname = query_res.dirname
+    result = plot_util.load_results(dirname, names=select_names, x_bound=x_bound, use_buf=use_buf)
+    if len(result) == 0:
+        return None
+    assert len(result) == 1
+    result = result[0]
+    return result
+
 def plot_func(data_root:str, task_table_name:str, regs:list, split_keys:list, metrics:list,
-              use_buf=False, verbose=True,
+              use_buf=False, verbose=False, summarize_res=True,
               x_bound: Optional[int]=None,
               xlabel: Optional[str] = DEFAULT_X_NAME, ylabel: Optional[Union[str, list]] = None,
               scale_dict: Optional[dict] = None, regs2legends: Optional[list] = None,
+              hp_filter_dict: Optional[dict] = None,
               key_to_legend_fn: Optional[Callable] = default_key_to_legend,
-              split_by_metrics=True,
-              save_name: Optional[str] = None, *args, **kwargs):
+              split_by_metrics=True, save_name: Optional[str]=None, *args, **kwargs):
     """
     A high-level matplotlib plotter.
     The function is to load your experiments and plot curves.
@@ -43,23 +69,28 @@ def plot_func(data_root:str, task_table_name:str, regs:list, split_keys:list, me
     The function also supports several configure to post-process your log data, including resample, smooth_step, scale_dict, key_to_legend_fn, etc.
     The function also supports several configure to beautify the figure, see the parameters of plot_util.plot_results.
 
-    :param data_root:
-    :type data_root:
-    :param task_table_name:
-    :type task_table_name:
-    :param regs:
-    :type regs:
-    :param split_keys:
-    :type split_keys:
-    :param metrics:
-    :type metrics:
-    :param use_buf: use the preloaded csv data instead of loading from scratch
-    :type use_buf: bool
-    :param x_bound: drop the collected with time-step larger than x_bound.
-    :param xlabel: set the label of the y axes.
+    :param data_root: Root directory for the data.
+    :type data_root: str
+    :param task_table_name: Task table name.
+    :type task_table_name: str
+    :param regs: List of regular expressions used for matching files/directories.
+    :type regs: list
+    :param split_keys: List of keys to group experiments.
+    :type split_keys: list
+    :param metrics: List of metrics to be plotted.
+    :type metrics: list
+    :param use_buf: If True, uses preloaded csv data instead of loading from scratch.
+    :type use_buf: bool, default to False
+    :param verbose: If True, prints detailed log information during the process.
+    :type verbose: bool, default to True
+    :param x_bound: Drops the data collected with time-step larger than x_bound.
+    :type x_bound: Optional[int]
     :type xlabel: Optional[str]
     :param ylabel: set the label of the y axes.
     :type ylabel: Optional[str,list]
+    :param hp_filter_dict: a dict to filter your log.
+    e.g., hp_filter_dict= {'learning_rate': [0.001, 0.01, 0.1]} will select the logs where the learning rate is 0.001, 0.01, or 0.1.
+    :type hp_filter_dict: Optional[dict]
     :param scale_dict: a function dict, to map the value of the metrics through customize functions.
     e.g.,set metrics = ['return'], scale_dict = {'return': lambda x: np.log(x)}, then we will plot a log-scale return.
     :type scale_dict: Optional[dict]
@@ -77,32 +108,14 @@ def plot_func(data_root:str, task_table_name:str, regs:list, split_keys:list, me
     :return:
     :rtype:
     """
-    results = []
-    reg_group = {}
-    for reg in regs:
-        reg_group[reg] = []
-        print("searching", reg)
-        tester_dict = experiment_data_query(data_root, task_table_name, reg, ARCHIVE_TESTER)
-        log_dict = experiment_data_query(data_root, task_table_name, reg, LOG)
-        counter = 0
-        for k, v in log_dict.items():
-            result = plot_util.load_results(v.dirname, names=metrics + [DEFAULT_X_NAME],
-                                   x_bound=[DEFAULT_X_NAME, x_bound], use_buf=use_buf)
-            if len(result) == 0:
-                continue
-            assert len(result) == 1
-            result = result[0]
-            if verbose:
-                print("find log", v.dirname)
-            counter += 1
-            if os.path.exists(osp.join(v.dirname, HYPARAM + '.json')):
-                with open(osp.join(v.dirname, HYPARAM + '.json')) as f:
-                    result.hyper_param = json.load(f)
-            else:
-                result.hyper_param = tester_dict[k].exp_manager.hyper_param
-            results.append(result)
-            reg_group[reg].append(result)
-        print("find log number", counter)
+    csv_data_loader_func = lambda dirname: meta_csv_data_loader_func(dirname, select_names=metrics + [DEFAULT_X_NAME],
+                                                                     x_bound=[DEFAULT_X_NAME, x_bound], use_buf=use_buf)
+    results, reg_group = results_loader(data_root, task_table_name, regs, hp_filter_dict, csv_data_loader_func, verbose, data_type=LOG)
+    if summarize_res:
+        for k, v in reg_group.items():
+            print(f"for regex {k}, we have the following logs:")
+            for res in v:
+                print("find log", res.dirname, "\n [parsed key]", key_to_legend_fn(res.hyper_param, split_keys, '', False))
     final_scale_dict = {}
     for m in metrics:
         final_scale_dict[m] = lambda x: x

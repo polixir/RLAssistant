@@ -122,7 +122,7 @@ pip install -e .
 We build an example project to include most of the features of RLA, which can be seen in ./example/simplest_code. Now we summarize the steps to use it.
 
 ### Step1: Configuration. 
-1. To configure the experiment "database", you need to create a YAML file rla_config.yaml. You can use the template provided in ./example/simplest_code/rla_config.yaml as a starting point.
+1. To configure the experiment "database", you need to create a YAML file rla_config.yaml. You can use the template provided in ./example/rla_config.yaml as a starting point.
 2. Before starting your experiment, you should configure the RLA.exp_manager object. Here's an example:
 
     ```python
@@ -256,7 +256,7 @@ from RLA import MatplotlibRecorder as mpr
 def plot_func():
    import matplotlib.pyplot as plt
    plt.plot([1,1,1], [2,2,2])
-mpr.pretty_plot_wrapper('func', plot_func, xlabel='x', ylabel='y', title='react test', )
+mpr.pretty_plot_wrapper('func', plot_func, pretty_plot=True, xlabel='x', ylabel='y', title='react test')
 ```
 
 This code plots a figure using Matplotlib and saves it in the "results" directory.

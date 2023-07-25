@@ -1,1 +1,1 @@
-DATA_ROOT = '../../out_debug'
+DATA_ROOT = '../'

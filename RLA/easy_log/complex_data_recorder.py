@@ -34,7 +34,7 @@ class MatplotlibRecorder:
 
     @classmethod
     def pretty_plot_wrapper(cls, name:str, plot_func:Callable,
-                            cover=False, legend_outside=False, xlabel='', ylabel='', title='',
+                            cover=False, legend_outside=False, pretty_plot=False, xlabel='', ylabel='', title='',
                             add_timestamp=True, *args, **kwargs):
         """
         Save the customized plot figure to the RLA database.
@@ -47,6 +47,8 @@ class MatplotlibRecorder:
         :type cover: bool
         :param legend_outside: let legend be outside of the figure.
         :type legend_outside: bool
+        :param pretty_plot: use predefined configurations for plotting.
+        :type pretty_plot: bool
         :param xlabel: name of xlabel
         :type xlabel: str
         :param ylabel: name of xlabel
@@ -66,12 +68,13 @@ class MatplotlibRecorder:
         plot_func()
         lgd = plt.legend(prop={'size': 15}, loc=2 if legend_outside else None,
                          bbox_to_anchor=(1, 1) if legend_outside else None)
-        plt.xlabel(xlabel, fontsize=18)
-        plt.ylabel(ylabel, fontsize=18)
-        plt.xticks(fontsize=14)
-        plt.yticks(fontsize=14)
-        plt.title(title, fontsize=13)
-        plt.grid(True)
+        if pretty_plot:
+            plt.xlabel(xlabel, fontsize=18)
+            plt.ylabel(ylabel, fontsize=18)
+            plt.xticks(fontsize=14)
+            plt.yticks(fontsize=14)
+            plt.title(title, fontsize=13)
+            plt.grid(True)
         if lgd is not None:
             cls.save(name, cover=cover, add_timestamp=add_timestamp, bbox_extra_artists=tuple([lgd]),
                      bbox_inches='tight', *args, **kwargs)

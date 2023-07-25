@@ -7,6 +7,7 @@ import pandas
 import seaborn as sns
 from collections import defaultdict, namedtuple
 from RLA.easy_log.logger import read_json, read_csv
+from RLA.easy_plot.result_cls import CsvResult
 sns.set_style('darkgrid', {'legend.frameon':True})
 
 
@@ -154,14 +155,6 @@ def symmetric_ema(xolds, yolds, low=None, high=None, n=512, decay_steps=1., low_
 # Result = namedtuple('Result', 'monitor progress dirname metadata hyper_param')
 # Result.__new__.__defaults__ = (None,) * len(Result._fields)
 
-class Result:
-    def __init__(self, monitor=None, progress=None, dirname=None, metadata=None, hyper_param=None):
-        self.monitor = monitor
-        self.progress = progress
-        self.dirname = dirname
-        self.metadata = metadata
-        self.hyper_param = hyper_param
-
 def word_replace(string):
     return string.replace('/', '--').replace("\'", "||")
 
@@ -219,7 +212,8 @@ def load_results(root_dir_or_dirs, names, x_bound, enable_progress=True, use_buf
                             encode_names = word_replace(encode_names)
                             buf_csv = osp.join(dirname, "progress-{}.csv".format(encode_names))
                             if osp.exists(buf_csv) and use_buf:
-                                print("read buf: {}".format(buf_csv))
+                                if verbose:
+                                    print("read buf: {}".format(buf_csv))
                                 raw_df = read_csv(buf_csv)
                             else:
                                 reader = pd.read_csv(progcsv, chunksize=5000,  quoting=csv.QUOTE_NONE,
@@ -232,7 +226,8 @@ def load_results(root_dir_or_dirs, names, x_bound, enable_progress=True, use_buf
                                     existed_names = []
                                     for name in names:
                                         if name not in slim_chunk.columns:
-                                            print("[error keys]: {}".format(name))
+                                            if verbose:
+                                                print("[error keys]: {} in experiment: {}".format(name, dirname))
                                         else:
                                             existed_names.append(name)
                                     if len(existed_names) == 0:
@@ -259,7 +254,7 @@ def load_results(root_dir_or_dirs, names, x_bound, enable_progress=True, use_buf
 
 
                 if result.get('progress') is not None:
-                    allresults.append(Result(**result))
+                    allresults.append(CsvResult(**result))
                     if verbose:
                         print('successfully loaded %s'%dirname)
 
@@ -412,15 +407,17 @@ def plot_results(
         ncols = int(math.ceil(N / nrows))
     figsize = figsize or (7 * ncols, 6 * nrows)
 
-    legend_height = 0.12
-    subfigsize = (1 / ncols, figsize[1] / (figsize[1] + len(allresults) * legend_height) / nrows)
-    figsize = (figsize[0], figsize[1] + len(allresults) * legend_height)
+
+    legend_height = 0.11
+    figpercentage = (1, figsize[1] / (figsize[1] + len(allresults) * legend_height))
+    subfigsize =    (figpercentage[0] / ncols, figpercentage[1] / nrows)
+    figsize =       (figsize[0], figsize[1] + len(allresults) * legend_height)
 
     # if legend_outside:
     #     figsize = list(figsize)
     #     figsize[0] += 4
     #     figsize = tuple(figsize)
-    f, axarr = plt.subplots(nrows, ncols, sharex=False, squeeze=False, figsize=figsize, dpi=90 * ncols)
+    f, axarr = plt.subplots(nrows, ncols, sharex=False, squeeze=False, figsize=figsize, dpi=90)
     groups = []
     for results in allresults:
         groups.extend(group_fn(results)[0])
@@ -438,10 +435,18 @@ def plot_results(
         keys = metrics
     else:
         keys = sorted(sk2r.keys())
+
+    g2l = {}
+    g2lf = {}
+    g2c = {}
     for (kid, sk) in enumerate(keys):
-        g2l = {}
-        g2lf = {}
-        g2c = defaultdict(int)
+        if split_by_metrics:
+            sk_for_legend = sk
+        else:
+            sk_for_legend = 'ALL'
+        g2l[sk_for_legend] = {}
+        g2lf[sk_for_legend] = {}
+        g2c[sk_for_legend] = defaultdict(int)
         sresults = sk2r[sk]
         gresults = defaultdict(list)
         idx_row = kid // ncols
@@ -452,7 +457,7 @@ def plot_results(
             if split_by_metrics:
                 y_names = [sk]
             for group, y_name in zip(result_groups, y_names):
-                g2c[group] += 1
+                g2c[sk_for_legend][group] += 1
                 res = xy_fn(result, y_name)
                 if res is None:
                     continue
@@ -471,7 +476,9 @@ def plot_results(
                     if resample:
                         x, y, counts = symmetric_ema(x, y, x[0], x[-1], resample, decay_steps=smooth_step)
                     l, = ax.plot(x, y, color=colors[groups.index(group) % len(colors)])
-                    g2l[group] = l
+
+                    if len(x) > 1:
+                        g2l[group] = l
 
         if average_group:
             for group in sorted(groups):
@@ -526,13 +533,15 @@ def plot_results(
                                                       markersize=10)
                 else:
                     l, = axarr[idx_row][idx_col].plot(usex, ymean, color=color)
-                g2l[group] = l
-                if shaded_err:
-                    g2lf[group + '-se'] = [ax.fill_between(usex, ymean - ystderr, ymean + ystderr, color=color, alpha=.2), ymean, ystderr]
-                if shaded_std:
-                    g2lf[group + '-ss'] = [ax.fill_between(usex, ymean - ystd,    ymean + ystd,    color=color, alpha=.2), ymean, ystd]
-                if shaded_range:
-                    g2lf[group + '-sr'] = [ax.fill_between(usex, ymin,    ymax,    color=color, alpha=.1), ymin, ymax]
+
+                if len(x) > 1:
+                    g2l[sk_for_legend][group] = l
+                    if shaded_err:
+                        g2lf[sk_for_legend][group + '-se'] = [ax.fill_between(usex, ymean - ystderr, ymean + ystderr, color=color, alpha=.2), ymean, ystderr]
+                    if shaded_std:
+                        g2lf[sk_for_legend][group + '-ss'] = [ax.fill_between(usex, ymean - ystd,    ymean + ystd,    color=color, alpha=.2), ymean, ystd]
+                    if shaded_range:
+                        g2lf[sk_for_legend][group + '-sr'] = [ax.fill_between(usex, ymin,    ymax,    color=color, alpha=.1), ymin, ymax]
         if not pretty:
             ax.set_title(sk)
         if split_by_metrics:
@@ -566,16 +575,26 @@ def plot_results(
     # https://matplotlib.org/users/legend_guide.html
     # if not pretty:
     #     plt.tight_layout()
-    if any(g2l.keys()):
-        if show_number:
-            legend_keys = np.array(['%s (%i)' % (g, g2c[g]) for g in g2l] if average_group else g2l.keys())
-        else:
-            legend_keys = np.array(['%s' % (g) for g in g2l] if average_group else g2l.keys())
 
-        legend_lines = np.array(list(g2l.values()))
-        sorted_index = np.argsort(legend_keys)
-        legend_keys = legend_keys[sorted_index]
-        legend_lines = legend_lines[sorted_index]
+    # select the longest legends
+    longest_legend_lines = []
+    longest_keys = None
+    for k in g2l.keys():
+        legend_lines = np.array(list(g2l[k].values()))
+
+        if len(longest_legend_lines) <= len(legend_lines):
+            longest_keys = k
+            legend_lines = np.array(list(g2l[k].values()))
+            if show_number:
+                legend_keys = np.array(['%s (%i)' % (g, g2c[k][g]) for g in g2l[k]] if average_group else g2l[k].keys())
+            else:
+                legend_keys = np.array(['%s' % (g) for g in g2l[k]] if average_group else g2l[k].keys())
+            longest_legend_lines = legend_lines
+            longest_legend_keys = legend_keys
+    if len(longest_legend_lines) > 0:
+        sorted_index = np.argsort(longest_legend_keys)
+        legend_keys = longest_legend_keys[sorted_index]
+        legend_lines = longest_legend_lines[sorted_index]
         if regs2legends is not None:
             legend_keys = np.array(regs2legends)
         if pretty:
@@ -584,23 +603,27 @@ def plot_results(
                     l.update(props={"color": colors[index % len(colors)]})
                 else:
                     l.update(props={"color": colors[index % len(colors)]})
-                original_legend_keys = np.array(['%s' % (g) for g in g2l] if average_group else g2l.keys())
+                original_legend_keys = np.array(['%s' % (g) for g in g2l[longest_keys]] if average_group else g2l[longest_keys].keys())
                 original_legend_keys = original_legend_keys[sorted_index]
-                if shaded_err:
-                    res = g2lf[original_legend_keys[index] + '-se']
-                    res[0].update(props={"color": colors[index % len(colors)]})
-                    print("{}-err : ({:.3f} $\pm$ {:.3f})".format(legend_keys[index], res[1][-1], res[2][-1]))
-                    score_results[legend_keys[index]+'-err'] = [res[1][-1], res[2][-1]]
-                if shaded_std:
-                    res = g2lf[original_legend_keys[index] + '-ss']
-                    res[0].update(props={"color": colors[index % len(colors)]})
-                    print("{}-std :({:.3f} $\pm$ {:.3f})".format(legend_keys[index], res[1][-1], res[2][-1]))
-                    score_results[legend_keys[index]+'-std'] = [res[1][-1], res[2][-1]]
-                if shaded_range:
-                    res = g2lf[original_legend_keys[index] + '-sr']
-                    res[0].update(props={"color": colors[index % len(colors)]})
-                    print("{}-range : ({:.3f}, {:.3f})".format(legend_keys[index], res[1][-1], res[2][-1]))
-                    score_results[legend_keys[index]+'-range'] = [res[1][-1], res[2][-1]]
+                for k in g2lf.keys():
+                    if original_legend_keys[index] + '-se' not in g2lf[k].keys():
+                        continue
+                    print("summarize results of", k)
+                    if shaded_err:
+                        res = g2lf[k][original_legend_keys[index] + '-se']
+                        res[0].update(props={"color": colors[index % len(colors)]})
+                        print("{}-err : ({:.3f} $\pm$ {:.3f})".format(legend_keys[index], res[1][-1], res[2][-1]))
+                        score_results[legend_keys[index]+'-err'] = [res[1][-1], res[2][-1]]
+                    if shaded_std:
+                        res = g2lf[k][original_legend_keys[index] + '-ss']
+                        res[0].update(props={"color": colors[index % len(colors)]})
+                        print("{}-std :({:.3f} $\pm$ {:.3f})".format(legend_keys[index], res[1][-1], res[2][-1]))
+                        score_results[legend_keys[index]+'-std'] = [res[1][-1], res[2][-1]]
+                    if shaded_range:
+                        res = g2lf[k][original_legend_keys[index] + '-sr']
+                        res[0].update(props={"color": colors[index % len(colors)]})
+                        print("{}-range : ({:.3f}, {:.3f})".format(legend_keys[index], res[1][-1], res[2][-1]))
+                        score_results[legend_keys[index]+'-range'] = [res[1][-1], res[2][-1]]
 
         if bound_line is not None:
             assert len(sk2r.keys()) == 1, "bound line can only support the single-metric mode."
@@ -631,9 +654,10 @@ def plot_results(
                     ncol=legend_ncol,
                     fancybox=True,
                     borderaxespad=0.0)
+                # leg_rows = np.ceil(len(legend_lines) / legend_ncol)
+                # f.subplots_adjust(bottom=(0.2 + 0.05 * (leg_rows - 1)) / nrows)
                 # if legend_outside:
-                #     leg_rows = np.ceil(len(legend_lines) / legend_ncol)
-                #     f.subplots_adjust(bottom=(0.2 + 0.05 * (leg_rows - 1)) / nrows)
+
         else:
             lgd = None
 
@@ -654,12 +678,20 @@ def plot_results(
         # plt.sca(f)
         if pretty:
             if not split_by_metrics or len(metrics) == 1:
-                texts.append(f.supylabel(ylabel, fontsize=20, horizontalalignment='center'))
+
+                try:
+                    texts.append(f.supylabel(ylabel, fontsize=20, horizontalalignment='center'))
+
+                except AttributeError as e:
+                    texts.append(plt.ylabel(ylabel, fontsize=20))
             else:
                 pass
         else:
             if not split_by_metrics or len(metrics) == 1:
-                f.supylabel(ylabel, horizontalalignment='center')
+                try:
+                    f.supylabel(ylabel, horizontalalignment='center')
+                except AttributeError as e:
+                    plt.ylabel(ylabel)
     if title is not None:
         if pretty:
             texts.append(plt.title(title, fontsize=18))
@@ -678,11 +710,11 @@ def plot_results(
             for isplit in range(ncols * nrows):
                 idx_row = isplit // ncols
                 idx_col = isplit % ncols
-                col_scale = 0.8
-                row_scale = 0.8
+                col_scale = 0.78
+                row_scale = 0.78
                 ax = axarr[idx_row][idx_col]
                 ax.set_position([idx_col * subfigsize[0] + (1 - col_scale) / (ncols * 2),
-                                 1 - (idx_row + 1) * subfigsize[1] + (1 - row_scale) / (nrows * 2),
+                                 1 - (idx_row + 1) * subfigsize[1] + figpercentage[1] * (1 - row_scale) / (nrows * 2),
                                  col_scale * subfigsize[0], row_scale * subfigsize[1]])
     #     plt.gcf().subplots_adjust(bottom=0.12, left=0.12)
     # if pretty:

@@ -1,5 +1,5 @@
 from RLA.easy_log import logger
-
+import time
 
 class TimeStepHolder(object):
 
@@ -8,19 +8,9 @@ class TimeStepHolder(object):
         self.__outer_epoch = epoch
         self.tf_log = tf_log
 
-    def config(self, time=0, epoch=0, tf_log=False):
+    def config(self, time=0, tf_log=False):
         self.__timesteps = time
-        self.__outer_epoch = epoch
         self.tf_log = tf_log
-
-    def set_outer_epoch(self, epoch):
-        self.__outer_epoch = epoch
-
-    def get_outer_epoch(self):
-        return self.__outer_epoch
-
-    def inc_outer_epoch(self):
-        self.__outer_epoch +=1
 
     def set_time(self, time):
         self.__timesteps = time
