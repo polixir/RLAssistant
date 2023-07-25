@@ -48,7 +48,7 @@ class ExperimentLoader(object):
         if self.load_date is not None and self.task_name is not None and self.data_root is not None:
             return True
         else:
-            logger.warn("meet invalid loader config when use it")
+            logger.warn("meet invalid loader config when using it")
             logger.warn("load_date", self.load_date)
             logger.warn("task_name", self.task_name)
             logger.warn("root", self.data_root)

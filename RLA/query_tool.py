@@ -7,9 +7,9 @@ import os
 import dill
 import re
 import copy
-from RLA.easy_log.const import LOG, ARCHIVE_TESTER, LogDataType
+from RLA.easy_log.const import LOG, ARCHIVE_TESTER, LogDataType, OTHER_RESULTS
 from RLA.easy_log.tester import Tester
-
+from RLA.utils.utils import set_or_append, set_or_keep
 
 class BasicQueryResult(object):
     def __init__(self, dirname):
@@ -21,9 +21,18 @@ class ArchiveQueryResult(BasicQueryResult):
         assert isinstance(exp_manager, Tester)
         self.exp_manager = exp_manager
 
+
 class LogQueryResult(BasicQueryResult):
     def __init__(self, dirname):
         super(LogQueryResult, self).__init__(dirname)
+
+
+class OtherQueryResult(BasicQueryResult):
+    def __init__(self, dirname, ctime, location):
+        super(OtherQueryResult, self).__init__(dirname)
+        self.ctime = ctime
+        self.location = location
+
 
 def extract_valid_index(regex):
     if re.search(r'\d{4}/\d{2}/\d{2}/\d{2}-\d{2}-\d{2}-\d{6}', regex):
@@ -37,9 +46,39 @@ def experiment_data_query(data_root, task_table_name, reg, data_type):
         return _log_data_query(data_root, task_table_name, reg)
     elif data_type == ARCHIVE_TESTER:
         return _archive_tester_query(data_root, task_table_name, reg)
+    elif data_type == OTHER_RESULTS:
+        return _results_data_query(data_root, task_table_name, reg)
     else:
         raise NotImplementedError
 
+def _results_data_query(data_root, task_table_name, reg):
+    experiment_data_dict = {}
+    def _other_res_append(inpt_key, inpt_dirname, inpt_location, inpt_ctime):
+        if inpt_key not in experiment_data_dict.keys():
+            experiment_data_dict[inpt_key] = OtherQueryResult(dirname=inpt_dirname, location=[inpt_location], ctime=[inpt_ctime])
+        else:
+            experiment_data_dict[inpt_key].location.append(inpt_location)
+            experiment_data_dict[inpt_key].ctime.append(inpt_ctime)
+
+    root_dir_regex = osp.join(data_root, OTHER_RESULTS, task_table_name, reg)
+    for root_dir in glob.glob(root_dir_regex):
+        if os.path.exists(root_dir):
+            if osp.isdir(root_dir):
+                for file_list in os.walk(root_dir):
+                    for file in file_list[2]:
+                        location = osp.join(file_list[0], file)
+                        ctime = os.path.getmtime(location)
+                        dirname = osp.dirname(location)
+                        key = extract_valid_index(location)
+                        _other_res_append(key, dirname, location, ctime)
+            else:
+                location = root_dir
+                key = extract_valid_index(location)
+                ctime = os.path.getmtime(location)
+                dirname = osp.dirname(location)
+                _other_res_append(key, dirname, location, ctime)
+
+    return experiment_data_dict
 
 def _archive_tester_query(data_root, task_table_name, reg):
     experiment_data_dict = {}

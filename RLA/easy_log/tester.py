@@ -26,7 +26,7 @@ import yaml
 import shutil
 import argparse
 from typing import Dict, List, Tuple, Type, Union, Optional
-from RLA.utils.utils import deprecated_alias, load_yaml
+from RLA.utils.utils import deprecated_alias, load_yaml, get_dir_seperator
 from RLA.const import DEFAULT_X_NAME, FRAMEWORK
 import pathspec
 
@@ -150,10 +150,11 @@ class Tester(object,):
         logger.info("private_config: ")
         self.dl_framework = self.private_config["DL_FRAMEWORK"]
         self.is_master_node = is_master_node
-
+        self.septor = get_dir_seperator()
         if code_root is None:
             if isinstance(rla_config, str):
-                self.project_root = "/".join(rla_config.split("/")[:-1])
+
+                self.project_root = self.septor.join(rla_config.split(self.septor)[:-1])
             else:
                 raise NotImplementedError("If you pass the rla_config dict directly, "
                                           "you should define the root of your codebase (for backup) explicitly by pass the code_root.")
@@ -309,14 +310,19 @@ class Tester(object,):
     def add_record_param(self, keys):
         for k in keys:
             if '.' in k:
+                sub_k = None
                 try:
                     sub_k_list = k.split('.')
-                    v = self.hyper_param[sub_k_list[0]]
+                    sub_k = sub_k_list[0]
+                    v = self.hyper_param[sub_k]
                     for sub_k in sub_k_list[1:]:
                         v = v[sub_k]
                     self.hyper_param_record.append(str(k) + '=' + str(v).replace('[', '{').replace(']', '}').replace('/', '_'))
                 except KeyError as e:
-                    print("do not include dot ('.') in your hyperparemeter name")
+                    print(f"the current key to parsed is: {k}. Can not find a matching key for {sub_k}."
+                          "\n Hint: do not include dot ('.') in your hyperparemeter name."
+                          "\n The recorded hyper parameters are")
+                    self.print_args()
             else:
                 self.hyper_param_record.append(str(k) + '=' + str(self.hyper_param[k]).replace('[', '{').replace(']', '}').replace('/', '_'))
 
@@ -620,7 +626,7 @@ class Tester(object,):
         end_time = time.time()
         start_time = self._rc_start_time[name]
         logger.record_tabular("time_used/{}".format(name), end_time - start_time)
-        logger.info("[test] func {0} time used {1:.2f}".format(name, end_time - start_time))
+        # logger.info("[test] func {0} time used {1:.2f}".format(name, end_time - start_time))
         del self._rc_start_time[name]
 
     # Saver manger.

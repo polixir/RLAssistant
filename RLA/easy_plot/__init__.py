@@ -1,0 +1,2 @@
+from RLA.easy_plot.plot_saved_images import plot_saved_images
+from RLA.easy_plot.plot_func_v2 import plot_func

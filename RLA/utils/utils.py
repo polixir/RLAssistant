@@ -4,6 +4,32 @@ import yaml
 
 import functools
 import warnings
+import platform
+from RLA.const import *
+
+
+def get_sys_type():
+    systype = platform.system()
+    if systype.find('Windows') != -1:
+        return PLATFORM_TYPE.WIN
+    elif systype.find('Linux') != -1:
+        return PLATFORM_TYPE.LINUX
+    else:
+        return PLATFORM_TYPE.OTHER
+
+def get_dir_seperator():
+    sys_flag = get_sys_type()
+    if sys_flag == PLATFORM_TYPE.WIN:
+        return '\\'
+    elif sys_flag == PLATFORM_TYPE.LINUX:
+        return '/'
+    elif sys_flag == PLATFORM_TYPE.OTHER:
+        print("[WARN] unrecognizable system type: ", sys_flag, "use default dir seperator")
+        return '/'
+    else:
+        raise NotImplementedError("[ERROR] undefined system flag", sys_flag)
+
+
 def deprecated_alias(**aliases):
     def deco(f):
         @functools.wraps(f)
@@ -32,6 +58,16 @@ def load_yaml(path):
     except TypeError:
         private_config = yaml.safe_load(fs)
     return private_config
+
+def set_or_append(dict_obj, key, value):
+    if key not in dict_obj.keys():
+        dict_obj[key] = [value]
+    else:
+        dict_obj[key].append(value)
+
+def set_or_keep(dict_obj, key, value):
+    if key not in dict_obj.keys():
+        dict_obj[key] = value
 
 def optional_set(new_val, old_val):
     return new_val if new_val is not None else old_val
