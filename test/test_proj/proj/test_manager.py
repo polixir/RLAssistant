@@ -147,7 +147,6 @@ class ManagerTest(BaseTest):
         except ImportError as e:
             print("[WARN] for this test, you should config your username, password, and the remote root firstly.")
             return
-            # raise RuntimeError
         try:
             if private_config.protocol == 'ftp':
                 import ftplib

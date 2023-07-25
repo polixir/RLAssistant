@@ -13,7 +13,7 @@ from collections import defaultdict, deque
 
 from typing import Any, Dict, List, Optional, Sequence, TextIO, Tuple, Union
 from contextlib import contextmanager
-from RLA.const import DEFAULT_X_NAME, FRAMEWORK
+from RLA.const import DEFAULT_X_NAME, FRAMEWORK, DEFAULT_TIMESTAMP
 
 DEBUG = 10
 INFO = 20
@@ -506,6 +506,12 @@ def dumpkvs():
     if get_current().name2val != dict():
         try:
             get_current().logkv(DEFAULT_X_NAME, timestep())
+        except NotImplementedError as e:
+            print(e)
+            for fmt in Logger.CURRENT.output_formats:
+                print(fmt)
+        try:
+            get_current().logkv(DEFAULT_TIMESTAMP, time.time())
         except NotImplementedError as e:
             print(e)
             for fmt in Logger.CURRENT.output_formats:

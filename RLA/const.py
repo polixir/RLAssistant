@@ -1,5 +1,5 @@
 DEFAULT_X_NAME = 'time-step'
-
+DEFAULT_TIMESTAMP = 'timestamp'
 class FRAMEWORK:
     tensorflow = 'tensorflow'
     torch = 'torch'
