@@ -82,15 +82,16 @@ class ExperimentLoader(object):
         """
         if self.is_valid_config:
             loaded_tester = Tester.load_tester(self.load_date, self.task_name, self.data_root)
-            print("attrs of the loaded tester")
-            pprint(loaded_tester.__dict__)
+            if verbose:
+                print("attrs of the loaded tester")
+                pprint(loaded_tester.__dict__)
             # load checkpoint
             load_res = {}
             if var_prefix is not None:
-                loaded_tester.new_saver(var_prefix=var_prefix, max_to_keep=1)
+                loaded_tester.new_saver(var_prefix=var_prefix, max_to_keep=1, verbose=verbose)
                 _, load_res = loaded_tester.load_checkpoint(ckp_index)
             else:
-                loaded_tester.new_saver(max_to_keep=1)
+                loaded_tester.new_saver(max_to_keep=1, verbose=verbose)
                 _, load_res = loaded_tester.load_checkpoint(ckp_index)
             hist_variables = {}
             if variable_list is not None:
