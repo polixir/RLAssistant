@@ -533,8 +533,11 @@ class Tester(object,):
         elif self.private_config["PROJECT_TYPE"]["backup_code_by"] == 'source':
             if self.private_config["BACKUP_CONFIG"].get("backup_code_dir"):
                 for dir_name in self.private_config["BACKUP_CONFIG"]["backup_code_dir"]:
-                    shutil.copytree(osp.join(self.project_root, dir_name), osp.join(code_dir, dir_name),
-                                    ignore=self.get_ignore_files)
+                    if os.path.isfile(osp.join(self.project_root, dir_name)):
+                        shutil.copy(osp.join(self.project_root, dir_name), osp.join(code_dir, dir_name))       
+                    else:
+                        shutil.copytree(osp.join(self.project_root, dir_name), osp.join(code_dir, dir_name),
+                                        ignore=self.get_ignore_files)
             if run_file is not None:
                 _copy_run_file(run_file, code_dir)
         else:

@@ -14,3 +14,4 @@ RLA.egg-info**
 test/test_data_root/*
 test/target_data_root/*
 **/private_config.py
+**/exp/*
