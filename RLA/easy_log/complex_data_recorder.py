@@ -35,7 +35,7 @@ class MatplotlibRecorder:
     @classmethod
     def pretty_plot_wrapper(cls, name:str, plot_func:Callable,
                             cover=False, legend_outside=False, pretty_plot=False, xlabel='', ylabel='', title='',
-                            add_timestamp=True, *args, **kwargs):
+                            add_timestamp=True, close_all_fig=True, *args, **kwargs):
         """
         Save the customized plot figure to the RLA database.
 
@@ -80,6 +80,8 @@ class MatplotlibRecorder:
                      bbox_inches='tight', *args, **kwargs)
         else:
             cls.save(name, cover=cover, add_timestamp=add_timestamp, *args, **kwargs)
+        if close_all_fig:
+            plt.close('all')
 
 class ImgRecorder:
     @classmethod
