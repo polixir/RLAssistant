@@ -54,6 +54,10 @@ class ExperimentLoader(object):
             logger.warn("task_name", self.task_name)
             logger.warn("root", self.data_root)
             return False
+    
+    def get_hyperparameters(self, hp_to_overwrite: Optional[list] = None):
+        # find 
+        pass
 
     def import_hyper_parameters(self, hp_to_overwrite: Optional[list] = None, sync_timestep=False):
         if self.is_valid_config:
