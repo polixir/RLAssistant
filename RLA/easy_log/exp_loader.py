@@ -5,6 +5,7 @@ import argparse
 from typing import Optional
 from RLA.const import DEFAULT_X_NAME
 from pprint import pprint
+from RLA.query_tool import experiment_data_query
 
 class ExperimentLoader(object):
     """
@@ -73,7 +74,7 @@ class ExperimentLoader(object):
             return argparse.Namespace(**exp_manager.hyper_param)
 
     def load_from_record_date(self, var_prefix: Optional[str] = None, variable_list: Optional[list]=None, verbose=True,
-                              ckp_index: Optional[int]=None):
+                              ckp_index: Optional[int]=None, checkpoint_name: Optional[str] = 'checkpoint'):
         """
 
         :param var_prefix: the prefix of namescope (for tf) to load. Set to '' to load all of the parameters.
@@ -89,10 +90,10 @@ class ExperimentLoader(object):
             load_res = {}
             if var_prefix is not None:
                 loaded_tester.new_saver(var_prefix=var_prefix, max_to_keep=1, verbose=verbose)
-                _, load_res = loaded_tester.load_checkpoint(ckp_index)
+                _, load_res = loaded_tester.load_checkpoint(ckp_index, checkpoint_name=checkpoint_name)
             else:
                 loaded_tester.new_saver(max_to_keep=1, verbose=verbose)
-                _, load_res = loaded_tester.load_checkpoint(ckp_index)
+                _, load_res = loaded_tester.load_checkpoint(ckp_index, checkpoint_name=checkpoint_name)
             hist_variables = {}
             if variable_list is not None:
                 for v in variable_list:

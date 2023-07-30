@@ -4,6 +4,7 @@ RLA.egg-info**
 .idea**
 **.pyc
 **/archive_tester/**
+**/hyperparameter/**
 **/checkpoint/**
 **/code/**
 **/results/**

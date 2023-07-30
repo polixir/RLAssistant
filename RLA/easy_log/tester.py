@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # coding=utf-8
-
 # Author      :   Xionghui Chen
 # Created     :   2017-11-12
 # Modified    :   2017-11-12
@@ -29,6 +28,7 @@ from typing import Dict, List, Tuple, Type, Union, Optional
 from RLA.utils.utils import deprecated_alias, load_yaml, get_dir_seperator
 from RLA.const import DEFAULT_X_NAME, FRAMEWORK
 import pathspec
+from omegaconf import OmegaConf
 
 def import_hyper_parameters(task_table_name, record_date):
     """
@@ -209,6 +209,7 @@ class Tester(object,):
         self.checkpoint_dir, _ = self.__create_file_directory(osp.join(self.data_root, CHECKPOINT, self.task_table_name), is_file=False)
         self.results_dir, _ = self.__create_file_directory(osp.join(self.data_root, OTHER_RESULTS, self.task_table_name), is_file=False)
         self.tmp_data_dir, _ = self.__create_file_directory(osp.join(self.data_root, TMP_DATA, self.task_table_name), is_file=False)
+        self.hyparameter_dir, _ = self.__create_file_directory(osp.join(self.data_root, HYPARAMETER, self.task_table_name), is_file=False)
         self.log_dir = log_dir
         self.code_dir = code_dir
 
@@ -217,10 +218,14 @@ class Tester(object,):
         self.__copy_source_code(self.run_file, code_dir)
         self._feed_hyper_params_to_tb()
         params = self.hyper_param
-        for param_dir in [self.code_dir, self.log_dir]:
-            with open(osp.join(param_dir, HYPARAM + '.json'), 'w') as f:
-                json.dump(params, f, sort_keys=True, indent=4, allow_nan=True, default=lambda o: '<not serializable>')
-                print("gen:", osp.join(param_dir, 'parameter.json'))
+        for param_dir in [self.code_dir, self.log_dir, self.hyparameter_dir]:
+                try:
+                    with open(osp.join(param_dir, HYPARAM_FILE_NAME + '.yaml'), 'w') as f:
+                        OmegaConf.save(config=params, f=f.name)
+                except Exception as e:
+                    with open(osp.join(param_dir, HYPARAM_FILE_NAME + '.json'), 'w') as f:
+                        json.dump(params, f, sort_keys=True, indent=4, allow_nan=True, default=lambda o: '<not serializable>')
+                        print("gen:", osp.join(param_dir, 'parameter.json'))
         self.print_log_dir()
 
     def update_log_files_location(self, root:str):

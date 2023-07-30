@@ -7,7 +7,7 @@ import os
 import dill
 import re
 import copy
-from RLA.easy_log.const import LOG, ARCHIVE_TESTER, LogDataType, OTHER_RESULTS
+from RLA.easy_log.const import * 
 from RLA.easy_log.tester import Tester
 from RLA.utils.utils import set_or_append, set_or_keep
 
@@ -26,6 +26,15 @@ class LogQueryResult(BasicQueryResult):
     def __init__(self, dirname):
         super(LogQueryResult, self).__init__(dirname)
 
+class HyperParamResult(BasicQueryResult):
+    def __init__(self, dirname, hyper_param):
+        super(HyperParamResult, self).__init__(dirname, hyper_param)
+
+
+class CkpResult(BasicQueryResult):
+    def __init__(self, dirname, all_ckps):
+        super(CkpResult, self).__init__(dirname, all_ckps)
+
 
 class OtherQueryResult(BasicQueryResult):
     def __init__(self, dirname, ctime, location):
@@ -41,6 +50,7 @@ def extract_valid_index(regex):
         target_reg = None
     return target_reg
 
+
 def experiment_data_query(data_root, task_table_name, reg, data_type):
     if data_type == LOG:
         return _log_data_query(data_root, task_table_name, reg)
@@ -48,8 +58,48 @@ def experiment_data_query(data_root, task_table_name, reg, data_type):
         return _archive_tester_query(data_root, task_table_name, reg)
     elif data_type == OTHER_RESULTS:
         return _results_data_query(data_root, task_table_name, reg)
+    elif data_type == HYPARAMETER:
+        return _results_hyparam_query(data_root, task_table_name, reg)
+    elif data_type == CHECKPOINT:
+        return _results_ckp_query(data_root, task_table_name, reg)
     else:
         raise NotImplementedError
+
+
+def _results_ckp_query(data_root, task_table_name, reg):
+    experiment_data_dict = {}
+    root_dir_regex = osp.join(data_root, CHECKPOINT, task_table_name, reg)
+    for root_dir in glob.glob(root_dir_regex):
+        if os.path.exists(root_dir):
+            if not osp.isdir(root_dir):
+                location = root_dir
+                dirname = osp.dirname(location)
+                all_ckps = os.listdir(dirname)
+                if len(all_ckps) == 0:
+                    continue
+                experiment_data_dict[key] = CkpResult(dirname=dirname, all_ckps=all_ckps)
+    return experiment_data_dict
+
+
+def _results_hyparam_query(data_root, task_table_name, reg):
+    experiment_data_dict = {}
+    root_dir_regex = osp.join(data_root, HYPARAMETER, task_table_name, reg)
+    for root_dir in glob.glob(root_dir_regex):
+        if os.path.exists(root_dir):
+            if not osp.isdir(root_dir):
+                location = root_dir
+                dirname = osp.dirname(location)
+                if os.path.exists(osp.join(dirname, HYPARAM_FILE_NAME + '.json')):
+                    with open(osp.join(dirname, HYPARAM_FILE_NAME + '.json')) as f:
+                        hyper_param = json.load(f)
+                elif os.path.exists(osp.join(dirname, HYPARAM_FILE_NAME + '.yaml')):
+                    with open(osp.join(dirname, HYPARAM_FILE_NAME + '.yaml')) as f:
+                        hyper_param = OmegaConf.load(f.name)
+                else:
+                    continue
+                experiment_data_dict[key] = HyperParamResult(dirname=dirname, hyper_param=hyper_param)
+    return experiment_data_dict
+
 
 def _results_data_query(data_root, task_table_name, reg):
     experiment_data_dict = {}
