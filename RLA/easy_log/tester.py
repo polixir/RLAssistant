@@ -24,7 +24,7 @@ from RLA.const import *
 import yaml
 import shutil
 import argparse
-from typing import Dict, List, Tuple, Type, Union, Optional
+from typing import Dict, List, Tuple, Type, Union, Optional, Callable
 from RLA.utils.utils import deprecated_alias, load_yaml, get_dir_seperator
 from RLA.const import DEFAULT_X_NAME, FRAMEWORK
 import pathspec
@@ -114,7 +114,7 @@ class Tester(object,):
     @deprecated_alias(task_name='task_table_name', private_config_path='rla_config', log_root='data_root')
     def configure(self, task_table_name: str, rla_config: Union[str, dict], data_root: str,
                   ignore_file_path: Optional[str] = None, run_file: Union[str, List[str]] = None,
-                  is_master_node: bool = False, code_root: Optional[str] = None):
+                  is_master_node: bool = False, code_root: Optional[str] = None, log_callback_fn: Optional[Callable] = None):
         """
         The function to configure your exp_manager, which should be run before your experiments.
         :param task_table_name: define a ``table'' to store a collection of experiment data item.
@@ -147,6 +147,7 @@ class Tester(object,):
         self.ignore_file_path = ignore_file_path
         self.task_table_name = task_table_name
         self.data_root = data_root
+        self.log_callback_fn = log_callback_fn
         logger.info("private_config: ")
         self.dl_framework = self.private_config["DL_FRAMEWORK"]
         self.is_master_node = is_master_node
@@ -253,7 +254,8 @@ class Tester(object,):
         self.writer = None
         # logger configure
         logger.info("store file %s" % self.pkl_file)
-        logger.configure(self.log_dir, self.private_config["LOG_USED"], framework=self.private_config["DL_FRAMEWORK"])
+        logger.configure(self.log_dir, self.private_config["LOG_USED"], framework=self.private_config["DL_FRAMEWORK"], 
+                         log_callback_fn=self.log_callback_fn)
         for fmt in logger.Logger.CURRENT.output_formats:
             if isinstance(fmt, logger.TensorBoardOutputFormat):
                 self.writer = fmt.writer

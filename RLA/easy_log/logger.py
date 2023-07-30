@@ -627,7 +627,7 @@ class Logger(object):
                     # So that you can still log to the terminal without setting up any output files
     CURRENT = None  # Current logger being used by the free functions above
 
-    def __init__(self, dir, output_formats, warn_output_formats, backup_output_formats, comm=None):
+    def __init__(self, dir, output_formats, warn_output_formats, backup_output_formats, comm=None, log_callback_fn=None):
         self.name2val = defaultdict(float)  # values this iteration
         self.exclude_name = defaultdict(str)  # values this iteration
         self.name2cnt = defaultdict(int)
@@ -637,6 +637,7 @@ class Logger(object):
         self.warn_output_log = warn_output_formats
         self.backup_output_log = backup_output_formats
         self.comm = comm
+        self.log_callback_fn = log_callback_fn
 
     # Logging API, forwarded
     # ----------------------------------------
@@ -674,6 +675,8 @@ class Logger(object):
     def dumpkvs(self):
         d = self.name2val
         out = d.copy() # Return the dict for unit testing purposes
+        if self.log_callback_fn is not None:
+            self.log_callback_fn(d.copy())
         for fmt in self.output_formats:
             if isinstance(fmt, KVWriter):
                 d2 = d.copy()
@@ -719,7 +722,7 @@ class Logger(object):
             if isinstance(fmt, SeqWriter):
                 fmt.writeseq(map(str, args))
 
-def configure(dir=None, format_strs=None, comm=None, framework='tensorflow'):
+def configure(dir=None, format_strs=None, comm=None, framework='tensorflow', log_callback_fn=None):
     """
     configure the current logger
 
@@ -736,6 +739,7 @@ def configure(dir=None, format_strs=None, comm=None, framework='tensorflow'):
     os.makedirs(dir, exist_ok=True)
 
     log_suffix = ''
+    log_callback_fn = log_callback_fn
     if format_strs is None:
         format_strs = os.getenv('OPENAI_LOG_FORMAT', 'stdout,log,csv').split(',')
     format_strs = filter(None, format_strs)
@@ -744,8 +748,7 @@ def configure(dir=None, format_strs=None, comm=None, framework='tensorflow'):
     backup_output_formats = make_output_format('backup', dir, log_suffix, framework)
 
     Logger.CURRENT = Logger(dir=dir, output_formats=output_formats, warn_output_formats=warn_output_formats,
-                            backup_output_formats=backup_output_formats,
-                            comm=comm)
+                            backup_output_formats=backup_output_formats, comm=comm, log_callback_fn=log_callback_fn)
     log('Logging to %s'%dir)
 
 def _configure_default_logger():
