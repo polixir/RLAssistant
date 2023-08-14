@@ -10,7 +10,7 @@ import copy
 from RLA.easy_log.const import * 
 from RLA.easy_log.tester import Tester
 from RLA.utils.utils import set_or_append, set_or_keep
-from omegaconf import OmegaConf
+
 
 
 class BasicQueryResult(object):
@@ -74,7 +74,7 @@ def experiment_data_query(data_root, task_table_name, reg, data_type, single_res
     :param data_root: The root directory of the data.
     :param task_table_name: The name of the task table.
     :param reg: Regular expression.
-    :param data_type: Data type, including LOG, ARCHIVE_TESTER, OTHER_RESULTS, HYPARAMETER, and CHECKPOINT.
+    :param data_type: Data type, including LOG, ARCHIVE_TESTER, OTHER_RESULTS, HYPARAMETER, TMP_DATA, and CHECKPOINT.
     :param single_res_filter: Whether to filter the query results. If True, only one query result is returned, otherwise all query results are returned.
     :raises NotImplementedError: When the data type is not one of the above five types, a NotImplementedError exception is thrown.
     :return: Returns the query result.
@@ -84,8 +84,8 @@ def experiment_data_query(data_root, task_table_name, reg, data_type, single_res
         query_res = _log_data_query(data_root, task_table_name, reg)
     elif data_type == ARCHIVE_TESTER:
         query_res =  _archive_tester_query(data_root, task_table_name, reg)
-    elif data_type == OTHER_RESULTS:
-        query_res =  _results_data_query(data_root, task_table_name, reg)
+    elif data_type == OTHER_RESULTS or data_type == TMP_DATA:
+        query_res =  _results_data_query(data_root, task_table_name, reg, data_type)
     elif data_type == HYPARAMETER:
         query_res =  _results_hyparam_query(data_root, task_table_name, reg)
     elif data_type == CHECKPOINT:
@@ -130,8 +130,12 @@ def _results_hyparam_query(data_root, task_table_name, reg):
                             with open(osp.join(dirname, HYPARAM_FILE_NAME + '.json')) as f:
                                 hyper_param = json.load(f)
                         elif os.path.exists(osp.join(dirname, HYPARAM_FILE_NAME + '.yaml')):
-                            with open(osp.join(dirname, HYPARAM_FILE_NAME + '.yaml')) as f:
-                                hyper_param = OmegaConf.load(f.name)
+                            try:
+                                from omegaconf import OmegaConf
+                                with open(osp.join(dirname, HYPARAM_FILE_NAME + '.yaml')) as f:
+                                    hyper_param = OmegaConf.load(f.name)
+                            except Exception as e:
+                                print("load omegaconf failed", e)
                         else:
                             continue
                         key = extract_valid_index(location)
@@ -139,24 +143,26 @@ def _results_hyparam_query(data_root, task_table_name, reg):
     return experiment_data_dict
 
 
-def _results_data_query(data_root, task_table_name, reg):
+def _results_data_query(data_root, task_table_name, reg, data_type):
     experiment_data_dict = {}
     def _other_res_append(inpt_key, inpt_dirname, inpt_location, inpt_ctime):
         if inpt_key not in experiment_data_dict.keys():
-            experiment_data_dict[inpt_key] = OtherQueryResult(dirname=inpt_dirname, location=[inpt_location], ctime=[inpt_ctime])
+            experiment_data_dict[inpt_key] = OtherQueryResult(dirname=inpt_dirname,
+                                                              location=[inpt_location], ctime=[inpt_ctime])
         else:
             experiment_data_dict[inpt_key].location.append(inpt_location)
             experiment_data_dict[inpt_key].ctime.append(inpt_ctime)
 
-    root_dir_regex = osp.join(data_root, OTHER_RESULTS, task_table_name, reg)
+    root_dir_regex = osp.join(data_root, data_type, task_table_name, reg)
     for root_dir in glob.glob(root_dir_regex):
         if os.path.exists(root_dir):
-            if osp.isdir(root_dir):
+            key = extract_valid_index(root_dir)
+            if osp.isdir(root_dir) and key is not None:
+                dirname = root_dir
                 for file_list in os.walk(root_dir):
                     for file in file_list[2]:
                         location = osp.join(file_list[0], file)
                         ctime = os.path.getmtime(location)
-                        dirname = osp.dirname(location)
                         key = extract_valid_index(location)
                         _other_res_append(key, dirname, location, ctime)
             else:
@@ -165,7 +171,6 @@ def _results_data_query(data_root, task_table_name, reg):
                 ctime = os.path.getmtime(location)
                 dirname = osp.dirname(location)
                 _other_res_append(key, dirname, location, ctime)
-
     return experiment_data_dict
 
 def _archive_tester_query(data_root, task_table_name, reg):

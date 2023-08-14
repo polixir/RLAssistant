@@ -9,7 +9,7 @@ from RLA.query_tool import experiment_data_query, extract_valid_index
 from RLA.easy_plot import plot_util
 from RLA.easy_log.const import LOG, ARCHIVE_TESTER, OTHER_RESULTS, HYPARAM_FILE_NAME
 from RLA.easy_plot.result_cls import Result
-from omegaconf import OmegaConf
+
 
 def results_loader(data_root, task_table_name, regs, hp_filter_dict, data_loader_func, verbose, data_type):
     results = []
@@ -29,8 +29,12 @@ def results_loader(data_root, task_table_name, regs, hp_filter_dict, data_loader
                 with open(osp.join(v.dirname, HYPARAM_FILE_NAME + '.json')) as f:
                     result.hyper_param = json.load(f)
             elif os.path.exists(osp.join(v.dirname, HYPARAM_FILE_NAME + '.yaml')):
-                with open(osp.join(v.dirname, HYPARAM_FILE_NAME + '.yaml')) as f:
-                    result.hyper_param = OmegaConf.load(f.name)
+                try:
+                    with open(osp.join(v.dirname, HYPARAM_FILE_NAME + '.yaml')) as f:
+                        from omegaconf import OmegaConf
+                        result.hyper_param = OmegaConf.load(f.name)
+                except Exception as e:
+                    print("load omegaconf failed", e)
             else:
                 result.hyper_param = tester_dict[k].exp_manager.hyper_param
             if hp_filter_dict is not None:

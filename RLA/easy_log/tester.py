@@ -28,7 +28,7 @@ from typing import Dict, List, Tuple, Type, Union, Optional, Callable
 from RLA.utils.utils import deprecated_alias, load_yaml, get_dir_seperator
 from RLA.const import DEFAULT_X_NAME, FRAMEWORK
 import pathspec
-from omegaconf import OmegaConf
+
 
 def import_hyper_parameters(task_table_name, record_date):
     """
@@ -222,6 +222,7 @@ class Tester(object,):
         for param_dir in [self.code_dir, self.log_dir, self.hyparameter_dir]:
                 try:
                     with open(osp.join(param_dir, HYPARAM_FILE_NAME + '.yaml'), 'w') as f:
+                        from omegaconf import OmegaConf
                         OmegaConf.save(config=params, f=f.name)
                 except Exception as e:
                     with open(osp.join(param_dir, HYPARAM_FILE_NAME + '.json'), 'w') as f:

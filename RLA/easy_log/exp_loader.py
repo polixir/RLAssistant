@@ -125,3 +125,9 @@ class ExperimentLoader(object):
 
 
 exp_loader = experimental_loader = ExperimentLoader()
+
+def fork_log_file_fn(task_name, record_date, root):
+    tmp_exp_loader = ExperimentLoader()
+    tmp_exp_loader.config(task_name, record_date, root)
+    tmp_exp_loader.fork_log_files()
+    
