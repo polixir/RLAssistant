@@ -107,21 +107,28 @@ class ExperimentLoader(object):
         else:
             return 0, {}, {}
 
-    def fork_log_files(self):
+    def fork_log_files(self, hp_to_overwrite: Optional[list] = None, sync_timestep=False):
         """
-        copy the log files in task_name/load_date to the new experiment.
-        :return:
+        Fork the log files of a loaded experiment to the current experiment, and update the hyperparameters and timestep if needed.
+        :param hp_to_overwrite: List of hyperparameters to overwrite with the current experiment's values.
+        :param sync_timestep: If True, synchronize the timestep of the current experiment with the loaded experiment.
         """
         if self.is_valid_config:
             global exp_manager
             assert isinstance(exp_manager, Tester)
             loaded_tester = Tester.load_tester(self.load_date, self.task_name, self.data_root)
+            
             # copy log file
             exp_manager.log_file_copy(loaded_tester)
             # copy attribute
-            exp_manager.hyper_param = loaded_tester.hyper_param
-            exp_manager.hyper_param_record = loaded_tester.hyper_param_record
-            exp_manager.private_config = loaded_tester.private_config
+            new_hp = copy.deepcopy(exp_manager.hyper_param)
+            new_hp.update(loaded_tester.hyper_param)
+            if hp_to_overwrite is not None:
+                for v in hp_to_overwrite:
+                    target_hp[v] = exp_manager.hyper_param[v]
+            if sync_timestep:
+                load_iter = loaded_tester.get_custom_data(DEFAULT_X_NAME)
+                exp_manager.time_step_holder.set_time(load_iter)
 
 
 exp_loader = experimental_loader = ExperimentLoader()

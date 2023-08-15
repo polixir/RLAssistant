@@ -7,6 +7,8 @@ import os
 import dill
 import re
 import copy
+import json
+
 from RLA.easy_log.const import * 
 from RLA.easy_log.tester import Tester
 from RLA.utils.utils import set_or_append, set_or_keep
