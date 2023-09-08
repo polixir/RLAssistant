@@ -5,6 +5,7 @@ import argparse
 from typing import Optional
 from RLA.const import DEFAULT_X_NAME
 from pprint import pprint
+from RLA.easy_log.const import *
 from RLA.query_tool import experiment_data_query, single_experiment_query
 
 from RLA.easy_log.const import *
@@ -62,12 +63,30 @@ class ExperimentLoader(object):
 
     def import_hyper_parameters(self, hp_to_overwrite: Optional[list] = None, sync_timestep=False):
         if self.is_valid_config:
-            loaded_tester = Tester.load_tester(self.load_date, self.task_name, self.data_root)
+            # loaded_tester = Tester.load_tester(self.load_date, self.task_name, self.data_root)
             target_hp = copy.deepcopy(exp_manager.hyper_param)
-            target_hp.update(loaded_tester.hyper_param)
+            query_res = single_experiment_query(self.data_root, self.task_name, self.load_date, HYPARAMETER)
+            load_config = query_res.hyper_param
+            target_hp.update(load_config)
             if hp_to_overwrite is not None:
-                for v in hp_to_overwrite:
-                    target_hp[v] = exp_manager.hyper_param[v]
+                for k in hp_to_overwrite:
+                    if '.' in k:
+                        sub_k = None
+                        try:
+                            sub_k_list = k.split('.')
+                            sub_k = sub_k_list[0]
+                            v = target_hp[sub_k]
+                            origin_v = exp_manager.hyper_param[sub_k]
+                            for sub_k in sub_k_list[1:-1]:
+                                v = v[sub_k]
+                                origin_v = origin_v[sub_k]
+                            v[sub_k_list[-1]] = origin_v[sub_k_list[-1]]
+                        except KeyError as e:
+                            print(f"the current key to parsed is: {k}. Can not find a matching key for {sub_k}."
+                                "\n Hint: do not include dot ('.') in your hyperparemeter name."
+                                "\n The recorded hyper parameters are")
+                    else:
+                        target_hp[k] = exp_manager.hyper_param[k]
             args = argparse.Namespace(**target_hp)
             args.loaded_date = self.load_date
             args.loaded_task_name = self.task_name
@@ -136,6 +155,7 @@ class ExperimentLoader(object):
 
 exp_loader = experimental_loader = ExperimentLoader()
 
+
 def fork_log_file_fn(root, task_name, record_date, hp_to_overwrite: Optional[list] = None, sync_timestep=False):
     """
     Fork the log files of a loaded experiment to the current experiment, and update the hyperparameters and timestep if needed.
@@ -145,4 +165,8 @@ def fork_log_file_fn(root, task_name, record_date, hp_to_overwrite: Optional[lis
     tmp_exp_loader = ExperimentLoader()
     tmp_exp_loader.config(task_name, record_date, root)
     tmp_exp_loader.fork_log_files(hp_to_overwrite, sync_timestep)
-    
+ 
+def update_hyper_parameters_fn(task_name, record_date, root, hp_to_overwrite: Optional[list] = None, sync_timestep=False):
+    tmp_exp_loader = ExperimentLoader()
+    tmp_exp_loader.config(task_name, record_date, root)
+    tmp_exp_loader.import_hyper_parameters(hp_to_overwrite=hp_to_overwrite, sync_timestep=sync_timestep)

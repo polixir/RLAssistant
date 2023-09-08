@@ -264,7 +264,9 @@ class Tester(object,):
             if isinstance(fmt, logger.TensorBoardOutputFormat):
                 self.writer = fmt.writer
         if "tensorboard" not in self.private_config["LOG_USED"]:
-            time_step_holder.config(0, 0, tf_log=False)
+            time_step_holder.config(tf_log=False)
+        else:
+            time_step_holder.config(tf_log=True)        
 
     def log_file_copy(self, source_tester):
         assert isinstance(source_tester, Tester)
@@ -293,6 +295,8 @@ class Tester(object,):
             logger.warn("[load warning]: can not find log dir")
         
         self._init_logger()
+        for k, v in source_tester.custom_data.items():
+            self.custom_data[k] = v
 
     def task_gen(self, task_pattern_list):
         return '-'.join(task_pattern_list)
@@ -311,6 +315,7 @@ class Tester(object,):
         from RLA import single_experiment_query
         query_res = single_experiment_query(log_root, task_table_name, record_date, ARCHIVE_TESTER)
         load_tester = query_res.exp_manager
+
         return load_tester
 
     def add_record_param(self, keys):

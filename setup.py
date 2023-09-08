@@ -22,6 +22,6 @@ setup(
             'pysftp',
             'typing',
             'matplotlib>=3.4', # for supylabel and supxlabel
-            'omegaconf',
+            'omegaconf>=2.0.6',
         ]
     )
