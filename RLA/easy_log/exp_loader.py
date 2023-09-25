@@ -64,8 +64,12 @@ class ExperimentLoader(object):
         if self.is_valid_config:
             # loaded_tester = Tester.load_tester(self.load_date, self.task_name, self.data_root)
             target_hp = copy.deepcopy(exp_manager.hyper_param)
-            query_res = single_experiment_query(self.data_root, self.task_name, self.load_date, HYPARAMETER)
-            load_config = query_res.hyper_param
+            try:
+                query_res = single_experiment_query(self.data_root, self.task_name, self.load_date, HYPARAMETER)
+                load_config = query_res.hyper_param
+            except AssertionError as e:
+                loaded_tester = Tester.load_tester(self.load_date, self.task_name, self.data_root)
+                load_config = loaded_tester.hyper_param
             target_hp.update(load_config)
             if hp_to_overwrite is not None:
                 for k in hp_to_overwrite:
