@@ -196,6 +196,9 @@ class Tester(object,):
     def clear_record_param(self):
         self.hyper_param_record = []
 
+    def get_timstep(self):
+        return time_step_holder.get_time()
+    
     def log_files_gen(self):
         info = None
         self.record_date = datetime.datetime.now()
@@ -280,12 +283,16 @@ class Tester(object,):
             shutil.rmtree(self.tmp_data_dir)
             shutil.copytree(source_tester.tmp_data_dir, self.tmp_data_dir)
         else:
+
             print("[load warning]: can not find tmp_data dir")
+
         if os.path.exists(source_tester.log_dir):
             shutil.rmtree(self.log_dir)
             shutil.copytree(source_tester.log_dir, self.log_dir)
         else:
+
             print("[load warning]: can not find log dir")
+
         self._init_logger()
         for k, v in source_tester.custom_data.items():
             self.custom_data[k] = v
@@ -304,17 +311,9 @@ class Tester(object,):
     @classmethod
     def load_tester(cls, record_date, task_table_name, log_root):
         logger.info("load tester")
-        res_dir, res_file = cls.log_file_finder(record_date, task_table_name=task_table_name,
-                                                file_root=osp.join(log_root, ARCHIVE_TESTER),
-                                                log_type='files')
-        import dill
-        load_tester = dill.load(open(osp.join(res_dir, res_file), 'rb'))
-        assert isinstance(load_tester, Tester)
-        logger.info("update log files' root")
-        load_tester.update_log_files_location(root=log_root)
-        logger.info("load data: \n ts {}, \n ip {}, \n info {}".format(
-            str(load_tester.record_date.strftime("%Y/%m/%d")) + '/' + load_tester.record_date_to_str(
-                load_tester.record_date), load_tester.ipaddr, load_tester.info))
+        from RLA import single_experiment_query
+        query_res = single_experiment_query(log_root, task_table_name, record_date, ARCHIVE_TESTER)
+        load_tester = query_res.exp_manager
 
         return load_tester
 
@@ -669,6 +668,12 @@ class Tester(object,):
         else:
             raise NotImplementedError
 
+    def get_timestep(self):
+        return self.time_step_holder.get_time()
+
+    def set_timestep(self, ts):
+         self.time_step_holder.set_time(ts)
+
     def save_checkpoint(self, model_dict: Optional[dict] = None, related_variable: Optional[dict] = None, 
                         checkpoint_name: Optional[str] = 'checkpoint'):
         if self.dl_framework == FRAMEWORK.tensorflow:
@@ -687,7 +692,7 @@ class Tester(object,):
                 if self.checkpoint_keep_list is None:
                     self.checkpoint_keep_list = []
                 iter = self.time_step_holder.get_time()
-                tf.train.Checkpoint(**model_dict).save(self.checkpoint_dir + "{}-{}".format(checkpoint_name, iter))
+                tf.train.Checkpoint(**model_dict).save(self.checkpoint_dir + "{}_{}".format(checkpoint_name, iter))
                 self.checkpoint_keep_list.append(iter)
                 self.checkpoint_keep_list = self.checkpoint_keep_list[-1 * self.max_to_keep:]
         elif self.dl_framework == FRAMEWORK.torch:
@@ -695,11 +700,11 @@ class Tester(object,):
             if self.checkpoint_keep_list is None:
                 self.checkpoint_keep_list = []
             iter = self.time_step_holder.get_time()
-            torch.save(model_dict, f=tester.checkpoint_dir + "{}-{}.pt".format(checkpoint_name, iter))
+            torch.save(model_dict, f=tester.checkpoint_dir + "{}_{}.pt".format(checkpoint_name, iter))
             self.checkpoint_keep_list.append(iter)
             if len(self.checkpoint_keep_list) > self.max_to_keep:
                 for i in range(len(self.checkpoint_keep_list) - self.max_to_keep):
-                    rm_ckp_name = tester.checkpoint_dir + "{}-{}.pt".format(checkpoint_name, 
+                    rm_ckp_name = tester.checkpoint_dir + "{}_{}.pt".format(checkpoint_name, 
                                                                             self.checkpoint_keep_list[i])
                     logger.info("rm the older checkpoint", rm_ckp_name)
                     os.remove(rm_ckp_name)
@@ -726,26 +731,47 @@ class Tester(object,):
                 ckpt_path = tf.train.latest_checkpoint(cpt_name, ckp_index)
             logger.info("load ckpt_path {}".format(ckpt_path))
             self.saver.restore(tf.get_default_session(), ckpt_path)
-            max_iter = ckpt_path.split('-')[-1]
-            return int(max_iter), None
+            
+            # ================ UPDATE IN FUTURE VERSION ================
+            try:
+                max_iter = int(ckpt_path.split('-')[-1])
+            except ValueError:
+                max_iter = int(ckpt_path.split('_')[-1])
+            # ================ UPDATE IN FUTURE VERSION ================
+                
+            return max_iter, None
         elif self.dl_framework == FRAMEWORK.torch:
             import torch
             all_ckps = os.listdir(self.checkpoint_dir)
             ites = []
             for ckps in all_ckps:
                 print("ckps", ckps)
-                ites.append(int(ckps.split(f'{checkpoint_name}-')[1].split('.pt')[0]))
+                try:
+                    ites.append(int(ckps.split(f'{checkpoint_name}-')[1].split('.pt')[0]))
+                except ValueError:
+                    ites.append(int(ckps.split(f'{checkpoint_name}_')[1].split('.pt')[0]))
             idx = np.argsort(ites)
             all_ckps = np.array(all_ckps)[idx]
             print("all checkpoints:")
             pprint.pprint(all_ckps)
             if ckp_index is None:
-                ckp_index = all_ckps[-1].split(f'{checkpoint_name}-')[1].split('.pt')[0]
-            return ckp_index, torch.load(self.checkpoint_dir + "{}-{}.pt".format(checkpoint_name, ckp_index))
+                
+                # ================ UPDATE IN FUTURE VERSION ================
+                try:
+                    ckp_index = int(all_ckps[-1].split(f'{checkpoint_name}-')[1].split('.pt')[0])
+                except ValueError:
+                    ckp_index = int(all_ckps[-1].split(f'{checkpoint_name}_')[1].split('.pt')[0])
+                # ================ UPDATE IN FUTURE VERSION ================
+                
+            # ================ UPDATE IN FUTURE VERSION ================
+            try:
+                return ckp_index, torch.load(self.checkpoint_dir + "{}-{}.pt".format(checkpoint_name, ckp_index))
+            except FileNotFoundError:
+                return ckp_index, torch.load(self.checkpoint_dir + "{}_{}.pt".format(checkpoint_name, ckp_index))
+            # ================ UPDATE IN FUTURE VERSION ================
 
     def auto_parse_info(self):
         return '&'.join(self.hyper_param_record)
-
 
     def add_graph(self, sess):
         assert self.writer is not None
