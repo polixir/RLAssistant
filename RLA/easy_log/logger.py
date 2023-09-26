@@ -359,7 +359,6 @@ class TensorBoardOutputFormat(KVWriter):
     def close(self):
         if self.writer:
             self.writer.close()
-            self.writer = None
 
 
 def make_output_format(format, ev_dir, log_suffix='', framework='tensorflow'):
