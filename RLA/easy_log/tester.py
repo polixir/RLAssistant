@@ -283,27 +283,19 @@ class Tester(object,):
             shutil.rmtree(self.tmp_data_dir)
             shutil.copytree(source_tester.tmp_data_dir, self.tmp_data_dir)
         else:
-            # <<<<<<< HEAD
             print("[load warning]: can not find tmp_data dir")
-            # =======
-            #             logger.warn("[load warning]: can not find tmp_data dir")
-            #
-            #         if hasattr(source_tester, "hyparameter_dir") and os.path.exists(source_tester.hyparameter_dir):
-            #             shutil.rmtree(self.hyparameter_dir)
-            #             shutil.copytree(source_tester.hyparameter_dir, self.hyparameter_dir)
-            #         else:
-            #             logger.warn("[load warning]: can not find tmp_data dir")
-            # >>>>>>> 30d7abf15b243d9bc697323a389ee030e77df04b
+
+        if hasattr(source_tester, "hyparameter_dir") and os.path.exists(source_tester.hyparameter_dir):
+            shutil.rmtree(self.hyparameter_dir)
+            shutil.copytree(source_tester.hyparameter_dir, self.hyparameter_dir)
+        else:
+            print("[load warning]: can not find hyperparameter dir")
+
         if os.path.exists(source_tester.log_dir):
             shutil.rmtree(self.log_dir)
             shutil.copytree(source_tester.log_dir, self.log_dir)
         else:
-            # <<<<<<< HEAD
             print("[load warning]: can not find log dir")
-        # =======
-        #             logger.warn("[load warning]: can not find log dir")
-        #
-        # >>>>>>> 30d7abf15b243d9bc697323a389ee030e77df04b
 
         self._init_logger()
         for k, v in source_tester.custom_data.items():
