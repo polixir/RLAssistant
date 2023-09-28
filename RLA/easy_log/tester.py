@@ -270,30 +270,33 @@ class Tester(object,):
 
     def log_file_copy(self, source_tester):
         assert isinstance(source_tester, Tester)
+        logger.warn("reset log")
+        logger.reset()
         shutil.rmtree(self.checkpoint_dir)
         shutil.copytree(source_tester.checkpoint_dir, self.checkpoint_dir)
         if os.path.exists(source_tester.results_dir):
             shutil.rmtree(self.results_dir)
             shutil.copytree(source_tester.results_dir, self.results_dir)
         else:
-            logger.warn("[load warning]: can not find results dir")
+            print("[load warning]: can not find results dir")
         if hasattr(source_tester, "tmp_data_dir") and os.path.exists(source_tester.tmp_data_dir):
             shutil.rmtree(self.tmp_data_dir)
             shutil.copytree(source_tester.tmp_data_dir, self.tmp_data_dir)
         else:
-            logger.warn("[load warning]: can not find tmp_data dir")
-        
+            print("[load warning]: can not find tmp_data dir")
+
         if hasattr(source_tester, "hyparameter_dir") and os.path.exists(source_tester.hyparameter_dir):
             shutil.rmtree(self.hyparameter_dir)
             shutil.copytree(source_tester.hyparameter_dir, self.hyparameter_dir)
         else:
-            logger.warn("[load warning]: can not find tmp_data dir")
+            print("[load warning]: can not find hyperparameter dir")
+
         if os.path.exists(source_tester.log_dir):
             shutil.rmtree(self.log_dir)
             shutil.copytree(source_tester.log_dir, self.log_dir)
         else:
-            logger.warn("[load warning]: can not find log dir")
-        
+            print("[load warning]: can not find log dir")
+
         self._init_logger()
         for k, v in source_tester.custom_data.items():
             self.custom_data[k] = v
@@ -460,9 +463,10 @@ class Tester(object,):
 
     @classmethod
     def log_file_finder(cls, record_date, task_table_name='train', file_root='../checkpoint/', log_type='dir'):
-        record_date = datetime.datetime.strptime(record_date, '%Y/%m/%d/%H-%M-%S-%f')
+        dir_parser = get_dir_seperator()
+        record_date = datetime.datetime.strptime(record_date, f'%Y{dir_parser}%m{dir_parser}%d{dir_parser}%H-%M-%S-%f')
         prefix = osp.join(file_root, task_table_name)
-        directory = str(record_date.strftime("%Y/%m/%d"))
+        directory = str(record_date.strftime(f"%Y{dir_parser}%m{dir_parser}%d"))
         directory = osp.join(prefix, directory)
         file_found = ''
         for root, dirs, files in os.walk(directory):
