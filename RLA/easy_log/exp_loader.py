@@ -8,6 +8,7 @@ from pprint import pprint
 from RLA.easy_log.const import *
 from RLA.query_tool import experiment_data_query, single_experiment_query
 
+from RLA.easy_log.const import *
 class ExperimentLoader(object):
     """
     We can use a combination of the functions: import_hyper_parameters, load_from_record_date and fork_tester_log_files
@@ -130,51 +131,45 @@ class ExperimentLoader(object):
         else:
             return 0, {}, {}
 
-    def fork_log_files(self, hp_to_overwrite: Optional[list] = None, sync_timestep=False, sync_hyper_param=False):
+    def fork_log_files(self, hp_to_overwrite: Optional[list] = None, sync_timestep=False):
         """
         Fork the log files of a loaded experiment to the current experiment, and update the hyperparameters and timestep if needed.
+        :param hp_to_overwrite: List of hyperparameters to overwrite with the current experiment's values.
         :param hp_to_overwrite: List of hyperparameters to overwrite with the current experiment's values.
         :param sync_timestep: If True, synchronize the timestep of the current experiment with the loaded experiment.
         """
         if self.is_valid_config:
             global exp_manager
             assert isinstance(exp_manager, Tester)
-            loaded_tester = Tester.load_tester(self.load_date, self.task_name, self.data_root)
+            query_res = single_experiment_query(self.data_root, self.task_name, self.load_date, ARCHIVE_TESTER)
+            loaded_tester = query_res.exp_manager
+            
             # copy log file
             exp_manager.log_file_copy(loaded_tester)
-            if sync_hyper_param:
-                # copy attribute
-                new_hp = copy.deepcopy(exp_manager.hyper_param)
-                new_hp.update(loaded_tester.hyper_param)
-                if hp_to_overwrite is not None:
-                    # if '.' in k:
-                    #     sub_k = None
-                    #     try:
-                    #         sub_k_list = k.split('.')
-                    #         sub_k = sub_k_list[0]
-                    #         v = self.hyper_param[sub_k]
-                    #         for sub_k in sub_k_list[1:]:
-                    #             v = v[sub_k]
-                    #         self.hyper_param_record.append(str(k) + '=' + str(v).replace('[', '{').replace(']', '}').replace('/', '_'))
-                    #     except KeyError as e:
-                    #         print(f"the current key to parsed is: {k}. Can not find a matching key for {sub_k}."
-                    #             "\n Hint: do not include dot ('.') in your hyperparemeter name."
-                    #             "\n The recorded hyper parameters are")
-                    #         self.print_args()
-                    for v in hp_to_overwrite:
-                        target_hp[v] = exp_manager.hyper_param[v]
-                if sync_timestep:
-                    load_iter = loaded_tester.get_custom_data(DEFAULT_X_NAME)
-                    exp_manager.time_step_holder.set_time(load_iter)
+            # copy attribute
+            new_hp = copy.deepcopy(exp_manager.hyper_param)
+            new_hp.update(loaded_tester.hyper_param)
+            if hp_to_overwrite is not None:
+                for v in hp_to_overwrite:
+                    new_hp[v] = exp_manager.hyper_param[v]
+            if sync_timestep:
+                load_iter = loaded_tester.get_custom_data(DEFAULT_X_NAME)
+                exp_manager.time_step_holder.set_time(load_iter)
 
 
 exp_loader = experimental_loader = ExperimentLoader()
 
-def fork_log_file_fn(task_name, record_date, root, hp_to_overwrite: Optional[list] = None, sync_timestep=False, sync_hyper_param=False):
+
+def fork_log_file_fn(root, task_name, record_date, hp_to_overwrite: Optional[list] = None, sync_timestep=False):
+    """
+    Fork the log files of a loaded experiment to the current experiment, and update the hyperparameters and timestep if needed.
+    :param hp_to_overwrite: List of hyperparameters to overwrite with the current experiment's values.
+    :param sync_timestep: If True, synchronize the timestep of the current experiment with the loaded experiment.
+    """
     tmp_exp_loader = ExperimentLoader()
     tmp_exp_loader.config(task_name, record_date, root)
-    tmp_exp_loader.fork_log_files(hp_to_overwrite=hp_to_overwrite, sync_timestep=sync_timestep, sync_hyper_param=sync_hyper_param)
-
+    tmp_exp_loader.fork_log_files(hp_to_overwrite, sync_timestep)
+ 
 def update_hyper_parameters_fn(task_name, record_date, root, hp_to_overwrite: Optional[list] = None, sync_timestep=False):
     tmp_exp_loader = ExperimentLoader()
     tmp_exp_loader.config(task_name, record_date, root)

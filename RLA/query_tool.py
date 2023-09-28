@@ -1,6 +1,7 @@
 # Created by xionghuichen at 2022/8/10
 # Email: chenxh@lamda.nju.edu.cn
 
+import json
 import glob
 import os.path as osp
 import os
@@ -13,6 +14,8 @@ from RLA.easy_log.const import *
 from RLA.easy_log.tester import Tester
 from RLA.utils.utils import set_or_append, set_or_keep
 
+from RLA.const import *
+from RLA.utils.utils import get_dir_seperator, get_sys_type
 
 
 class BasicQueryResult(object):
@@ -48,10 +51,14 @@ class OtherQueryResult(BasicQueryResult):
         self.ctime = ctime
         self.location = location
 
-
 def extract_valid_index(regex):
-    if re.search(r'\d{4}/\d{2}/\d{2}/\d{2}-\d{2}-\d{2}-\d{6}', regex):
-        target_reg = re.search(r'\d{4}/\d{2}/\d{2}/\d{2}-\d{2}-\d{2}-\d{6}', regex).group(0)
+    sys_type = get_sys_type()
+    if sys_type == PLATFORM_TYPE.WIN:
+        regex_pattern = r'\d{4}\\\d{2}\\\d{2}\\\d{2}-\d{2}-\d{2}-\d{6}'
+    else:
+        regex_pattern = r'\d{4}\d{2}/\d{2}/\d{2}-\d{2}-\d{2}-\d{6}'
+    if re.search(regex_pattern, regex):
+        target_reg = re.search(regex_pattern, regex).group(0)
     else:
         target_reg = None
     return target_reg
