@@ -3,7 +3,7 @@ import time
 
 class TimeStepHolder(object):
 
-    def __init__(self, time, epoch, tf_log=False):
+    def __init__(self, time=0, epoch=0, tf_log=False):
         self.__timesteps = time
         self.__outer_epoch = epoch
         self.tf_log = tf_log

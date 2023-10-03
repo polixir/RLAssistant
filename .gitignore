@@ -4,6 +4,7 @@ RLA.egg-info**
 .idea**
 **.pyc
 **/archive_tester/**
+**/hyperparameter/**
 **/checkpoint/**
 **/code/**
 **/results/**
@@ -14,3 +15,4 @@ RLA.egg-info**
 test/test_data_root/*
 test/target_data_root/*
 **/private_config.py
+**/exp/*

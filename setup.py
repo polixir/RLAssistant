@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 
 setup(
         name='RLA',
-        version="0.6.2",
+        version="0.6.3",
         description=(
             'RL assistant'
         ),
@@ -21,6 +21,7 @@ setup(
             'tensorboardX', 
             'pysftp',
             'typing',
-            'matplotlib>=3.4' # for supylabel and supxlabel
+            'matplotlib>=3.4', # for supylabel and supxlabel
+            'omegaconf>=2.0.6',
         ]
     )

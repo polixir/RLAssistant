@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # coding=utf-8
-
 # Author      :   Xionghui Chen
 # Created     :   2017-11-12
 # Modified    :   2017-11-12
@@ -25,10 +24,11 @@ from RLA.const import *
 import yaml
 import shutil
 import argparse
-from typing import Dict, List, Tuple, Type, Union, Optional
+from typing import Dict, List, Tuple, Type, Union, Optional, Callable
 from RLA.utils.utils import deprecated_alias, load_yaml, get_dir_seperator
 from RLA.const import DEFAULT_X_NAME, FRAMEWORK
 import pathspec
+
 
 def import_hyper_parameters(task_table_name, record_date):
     """
@@ -114,7 +114,7 @@ class Tester(object,):
     @deprecated_alias(task_name='task_table_name', private_config_path='rla_config', log_root='data_root')
     def configure(self, task_table_name: str, rla_config: Union[str, dict], data_root: str,
                   ignore_file_path: Optional[str] = None, run_file: Union[str, List[str]] = None,
-                  is_master_node: bool = False, code_root: Optional[str] = None):
+                  is_master_node: bool = False, code_root: Optional[str] = None, log_callback_fn: Optional[Callable] = None):
         """
         The function to configure your exp_manager, which should be run before your experiments.
         :param task_table_name: define a ``table'' to store a collection of experiment data item.
@@ -147,13 +147,13 @@ class Tester(object,):
         self.ignore_file_path = ignore_file_path
         self.task_table_name = task_table_name
         self.data_root = data_root
+        self.log_callback_fn = log_callback_fn
         logger.info("private_config: ")
         self.dl_framework = self.private_config["DL_FRAMEWORK"]
         self.is_master_node = is_master_node
         self.septor = get_dir_seperator()
         if code_root is None:
             if isinstance(rla_config, str):
-
                 self.project_root = self.septor.join(rla_config.split(self.septor)[:-1])
             else:
                 raise NotImplementedError("If you pass the rla_config dict directly, "
@@ -196,6 +196,9 @@ class Tester(object,):
     def clear_record_param(self):
         self.hyper_param_record = []
 
+    def get_timstep(self):
+        return time_step_holder.get_time()
+    
     def log_files_gen(self):
         info = None
         self.record_date = datetime.datetime.now()
@@ -210,6 +213,7 @@ class Tester(object,):
         self.checkpoint_dir, _ = self.__create_file_directory(osp.join(self.data_root, CHECKPOINT, self.task_table_name), is_file=False)
         self.results_dir, _ = self.__create_file_directory(osp.join(self.data_root, OTHER_RESULTS, self.task_table_name), is_file=False)
         self.tmp_data_dir, _ = self.__create_file_directory(osp.join(self.data_root, TMP_DATA, self.task_table_name), is_file=False)
+        self.hyparameter_dir, _ = self.__create_file_directory(osp.join(self.data_root, HYPARAMETER, self.task_table_name), is_file=False)
         self.log_dir = log_dir
         self.code_dir = code_dir
 
@@ -218,10 +222,15 @@ class Tester(object,):
         self.__copy_source_code(self.run_file, code_dir)
         self._feed_hyper_params_to_tb()
         params = self.hyper_param
-        for param_dir in [self.code_dir, self.log_dir]:
-            with open(osp.join(param_dir, HYPARAM + '.json'), 'w') as f:
-                json.dump(params, f, sort_keys=True, indent=4, allow_nan=True, default=lambda o: '<not serializable>')
-                print("gen:", osp.join(param_dir, 'parameter.json'))
+        for param_dir in [self.code_dir, self.log_dir, self.hyparameter_dir]:
+                try:
+                    with open(osp.join(param_dir, HYPARAM_FILE_NAME + '.yaml'), 'w') as f:
+                        from omegaconf import OmegaConf
+                        OmegaConf.save(config=params, f=f.name)
+                except Exception as e:
+                    with open(osp.join(param_dir, HYPARAM_FILE_NAME + '.json'), 'w') as f:
+                        json.dump(params, f, sort_keys=True, indent=4, allow_nan=True, default=lambda o: '<not serializable>')
+                        print("gen:", osp.join(param_dir, 'parameter.json'))
         self.print_log_dir()
 
     def update_log_files_location(self, root:str):
@@ -249,33 +258,48 @@ class Tester(object,):
         self.writer = None
         # logger configure
         logger.info("store file %s" % self.pkl_file)
-        logger.configure(self.log_dir, self.private_config["LOG_USED"], framework=self.private_config["DL_FRAMEWORK"])
+        logger.configure(self.log_dir, self.private_config["LOG_USED"], framework=self.private_config["DL_FRAMEWORK"], 
+                         log_callback_fn=self.log_callback_fn)
         for fmt in logger.Logger.CURRENT.output_formats:
             if isinstance(fmt, logger.TensorBoardOutputFormat):
                 self.writer = fmt.writer
         if "tensorboard" not in self.private_config["LOG_USED"]:
-            time_step_holder.config(0, 0, tf_log=False)
+            time_step_holder.config(tf_log=False)
+        else:
+            time_step_holder.config(tf_log=True)        
 
     def log_file_copy(self, source_tester):
         assert isinstance(source_tester, Tester)
+        logger.warn("reset log")
+        logger.reset()
         shutil.rmtree(self.checkpoint_dir)
         shutil.copytree(source_tester.checkpoint_dir, self.checkpoint_dir)
         if os.path.exists(source_tester.results_dir):
             shutil.rmtree(self.results_dir)
             shutil.copytree(source_tester.results_dir, self.results_dir)
         else:
-            logger.warn("[load warning]: can not find results dir")
+            print("[load warning]: can not find results dir")
         if hasattr(source_tester, "tmp_data_dir") and os.path.exists(source_tester.tmp_data_dir):
             shutil.rmtree(self.tmp_data_dir)
             shutil.copytree(source_tester.tmp_data_dir, self.tmp_data_dir)
         else:
-            logger.warn("[load warning]: can not find tmp_data dir")
+            print("[load warning]: can not find tmp_data dir")
+
+        if hasattr(source_tester, "hyparameter_dir") and os.path.exists(source_tester.hyparameter_dir):
+            shutil.rmtree(self.hyparameter_dir)
+            shutil.copytree(source_tester.hyparameter_dir, self.hyparameter_dir)
+        else:
+            print("[load warning]: can not find hyperparameter dir")
+
         if os.path.exists(source_tester.log_dir):
             shutil.rmtree(self.log_dir)
             shutil.copytree(source_tester.log_dir, self.log_dir)
         else:
-            logger.warn("[load warning]: can not find log dir")
+            print("[load warning]: can not find log dir")
+
         self._init_logger()
+        for k, v in source_tester.custom_data.items():
+            self.custom_data[k] = v
 
     def task_gen(self, task_pattern_list):
         return '-'.join(task_pattern_list)
@@ -291,19 +315,9 @@ class Tester(object,):
     @classmethod
     def load_tester(cls, record_date, task_table_name, log_root):
         logger.info("load tester")
-        res_dir, res_file = cls.log_file_finder(record_date, task_table_name=task_table_name,
-                                                file_root=osp.join(log_root, ARCHIVE_TESTER),
-                                                log_type='files')
-        import dill
-        load_tester = dill.load(open(osp.join(res_dir, res_file), 'rb'))
-        assert isinstance(load_tester, Tester)
-        logger.info("update log files' root")
-        load_tester.update_log_files_location(root=log_root)
-        logger.info("load data: \n ts {}, \n ip {}, \n info {}".format(
-            str(load_tester.record_date.strftime("%Y/%m/%d")) + '/' + load_tester.record_date_to_str(
-                load_tester.record_date), load_tester.ipaddr, load_tester.info))
-
-
+        from RLA import single_experiment_query
+        query_res = single_experiment_query(log_root, task_table_name, record_date, ARCHIVE_TESTER)
+        load_tester = query_res.exp_manager
 
         return load_tester
 
@@ -449,9 +463,10 @@ class Tester(object,):
 
     @classmethod
     def log_file_finder(cls, record_date, task_table_name='train', file_root='../checkpoint/', log_type='dir'):
-        record_date = datetime.datetime.strptime(record_date, '%Y/%m/%d/%H-%M-%S-%f')
+        dir_parser = get_dir_seperator()
+        record_date = datetime.datetime.strptime(record_date, f'%Y{dir_parser}%m{dir_parser}%d{dir_parser}%H-%M-%S-%f')
         prefix = osp.join(file_root, task_table_name)
-        directory = str(record_date.strftime("%Y/%m/%d"))
+        directory = str(record_date.strftime(f"%Y{dir_parser}%m{dir_parser}%d"))
         directory = osp.join(prefix, directory)
         file_found = ''
         for root, dirs, files in os.walk(directory):
@@ -463,20 +478,6 @@ class Tester(object,):
                 raise NotImplementedError
             for search_item in search_list:
                 if search_item.startswith(str(record_date.strftime("%H-%M-%S-%f"))):
-
-                    # self.__ipaddr = split_dir[1]
-                    # if version_num is None:
-                    #     split_dir = search_item.split(' ')
-                    #     info = " ".join(split_dir[2:])
-                    #     logger.info("load data: \n ts {}, \n ip {}, \n info {}".format(split_dir[0], split_dir[1], info))
-                    #
-                    # elif version_num == LOG_NAME_FORMAT_VERSION.V1:
-                    #     split_dir = search_item.split('_')
-                    #     info = " ".join(split_dir[2:])
-                    #     logger.info("load data: \n ts {}, \n ip {}, \n info {}".format(split_dir[0], split_dir[1], info))
-                    #
-                    # else:
-                    #     raise RuntimeError("unknown version name", version_num)
 
                     file_found = search_item
                     break
@@ -500,6 +501,13 @@ class Tester(object,):
         return ip
 
     def get_ignore_files(self, src, names):
+        """
+        Get the list of files to be ignored based on the ignore_file_path.
+
+        :param src: The source directory path
+        :param names: List of file and directory names in the source directory
+        :return: List of file names to be ignored
+        """
         if self.ignore_file_path is None:
             return []
         with open(self.ignore_file_path) as f:
@@ -517,6 +525,7 @@ class Tester(object,):
             paths.append(osp.join(src, name))
         match_paths = list(set(spec.match_files(paths)))
         match_names = []
+        names  = list(names)
         for idx, path in enumerate(paths):
             if path in match_paths:
                 match_names.append(names[idx])
@@ -540,8 +549,11 @@ class Tester(object,):
         elif self.private_config["PROJECT_TYPE"]["backup_code_by"] == 'source':
             if self.private_config["BACKUP_CONFIG"].get("backup_code_dir"):
                 for dir_name in self.private_config["BACKUP_CONFIG"]["backup_code_dir"]:
-                    shutil.copytree(osp.join(self.project_root, dir_name), osp.join(code_dir, dir_name),
-                                    ignore=self.get_ignore_files)
+                    if os.path.isfile(osp.join(self.project_root, dir_name)):
+                        shutil.copy(osp.join(self.project_root, dir_name), osp.join(code_dir, dir_name))       
+                    else:
+                        shutil.copytree(osp.join(self.project_root, dir_name), osp.join(code_dir, dir_name),
+                                        ignore=self.get_ignore_files)
             if run_file is not None:
                 _copy_run_file(run_file, code_dir)
         else:
@@ -630,7 +642,7 @@ class Tester(object,):
         del self._rc_start_time[name]
 
     # Saver manger.
-    def new_saver(self, max_to_keep, var_prefix=None):
+    def new_saver(self, max_to_keep, var_prefix=None, verbose=True):
         """
         initialize new tf.Saver
         :param var_prefix: we use var_prefix to filter the variables for saving.
@@ -643,9 +655,10 @@ class Tester(object,):
                 var_prefix = ''
             try:
                 var_list = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, var_prefix)
-                logger.info("save variable :")
-                for v in var_list:
-                    logger.info(v)
+                if verbose:
+                    logger.info("save variable :")
+                    for v in var_list:
+                        logger.info(v)
                 self.saver = tf.train.Saver(var_list=var_list, max_to_keep=max_to_keep, filename=self.checkpoint_dir,
                                             save_relative_paths=True)
 
@@ -659,11 +672,20 @@ class Tester(object,):
         else:
             raise NotImplementedError
 
-    def save_checkpoint(self, model_dict: Optional[dict] = None, related_variable: Optional[dict] = None):
+    def get_timestep(self):
+        return self.time_step_holder.get_time()
+
+    def set_timestep(self, ts):
+         self.time_step_holder.set_time(ts)
+
+    def save_checkpoint(self, model_dict: Optional[dict] = None, related_variable: Optional[dict] = None, 
+                        checkpoint_name: Optional[str] = 'checkpoint'):
         if self.dl_framework == FRAMEWORK.tensorflow:
+            if checkpoint_name != 'checkpoint':
+                logger.warn("In tensorflow, the checkpoint is identified by ckp_index")
             import tensorflow as tf
             iter = self.time_step_holder.get_time()
-            cpt_name = osp.join(self.checkpoint_dir, 'checkpoint')
+            cpt_name = osp.join(self.checkpoint_dir, checkpoint_name)
             logger.info("save checkpoint to ", cpt_name, iter)
             try:
                 self.saver.save(tf.get_default_session(), cpt_name, global_step=iter)
@@ -674,11 +696,7 @@ class Tester(object,):
                 if self.checkpoint_keep_list is None:
                     self.checkpoint_keep_list = []
                 iter = self.time_step_holder.get_time()
-                # tf.compat.v1.disable_eager_execution()
-                # tf = tf.compat.v1
-                # self.saver.save(tf.get_default_session(), cpt_name, global_step=iter)
-
-                tf.train.Checkpoint(**model_dict).save(tester.checkpoint_dir + "checkpoint-{}".format(iter))
+                tf.train.Checkpoint(**model_dict).save(self.checkpoint_dir + "{}_{}".format(checkpoint_name, iter))
                 self.checkpoint_keep_list.append(iter)
                 self.checkpoint_keep_list = self.checkpoint_keep_list[-1 * self.max_to_keep:]
         elif self.dl_framework == FRAMEWORK.torch:
@@ -686,11 +704,12 @@ class Tester(object,):
             if self.checkpoint_keep_list is None:
                 self.checkpoint_keep_list = []
             iter = self.time_step_holder.get_time()
-            torch.save(model_dict, f=tester.checkpoint_dir + "checkpoint-{}.pt".format(iter))
+            torch.save(model_dict, f=tester.checkpoint_dir + "{}_{}.pt".format(checkpoint_name, iter))
             self.checkpoint_keep_list.append(iter)
             if len(self.checkpoint_keep_list) > self.max_to_keep:
                 for i in range(len(self.checkpoint_keep_list) - self.max_to_keep):
-                    rm_ckp_name = tester.checkpoint_dir + "checkpoint-{}.pt".format(self.checkpoint_keep_list[i])
+                    rm_ckp_name = tester.checkpoint_dir + "{}_{}.pt".format(checkpoint_name, 
+                                                                            self.checkpoint_keep_list[i])
                     logger.info("rm the older checkpoint", rm_ckp_name)
                     os.remove(rm_ckp_name)
                 self.checkpoint_keep_list = self.checkpoint_keep_list[-1 * self.max_to_keep:]
@@ -702,8 +721,10 @@ class Tester(object,):
         self.add_custom_data(DEFAULT_X_NAME, time_step_holder.get_time(), int, mode='replace')
         self.serialize_object_and_save()
 
-    def load_checkpoint(self, ckp_index=None):
+    def load_checkpoint(self, ckp_index=None, checkpoint_name: Optional[str] = 'checkpoint'):
         if self.dl_framework == FRAMEWORK.tensorflow:
+            if checkpoint_name != 'checkpoint':
+                logger.warn("In tensorflow, the checkpoint is identified by ckp_index")
             # TODO: load with variable scope.
             import tensorflow as tf
             cpt_name = osp.join(self.checkpoint_dir)
@@ -714,26 +735,47 @@ class Tester(object,):
                 ckpt_path = tf.train.latest_checkpoint(cpt_name, ckp_index)
             logger.info("load ckpt_path {}".format(ckpt_path))
             self.saver.restore(tf.get_default_session(), ckpt_path)
-            max_iter = ckpt_path.split('-')[-1]
-            return int(max_iter), None
+            
+            # ================ UPDATE IN FUTURE VERSION ================
+            try:
+                max_iter = int(ckpt_path.split('-')[-1])
+            except ValueError:
+                max_iter = int(ckpt_path.split('_')[-1])
+            # ================ UPDATE IN FUTURE VERSION ================
+                
+            return max_iter, None
         elif self.dl_framework == FRAMEWORK.torch:
             import torch
             all_ckps = os.listdir(self.checkpoint_dir)
             ites = []
             for ckps in all_ckps:
                 print("ckps", ckps)
-                ites.append(int(ckps.split('checkpoint-')[1].split('.pt')[0]))
+                try:
+                    ites.append(int(ckps.split(f'{checkpoint_name}-')[1].split('.pt')[0]))
+                except ValueError:
+                    ites.append(int(ckps.split(f'{checkpoint_name}_')[1].split('.pt')[0]))
             idx = np.argsort(ites)
             all_ckps = np.array(all_ckps)[idx]
             print("all checkpoints:")
             pprint.pprint(all_ckps)
             if ckp_index is None:
-                ckp_index = all_ckps[-1].split('checkpoint-')[1].split('.pt')[0]
-            return ckp_index, torch.load(self.checkpoint_dir + "checkpoint-{}.pt".format(ckp_index))
+                
+                # ================ UPDATE IN FUTURE VERSION ================
+                try:
+                    ckp_index = int(all_ckps[-1].split(f'{checkpoint_name}-')[1].split('.pt')[0])
+                except ValueError:
+                    ckp_index = int(all_ckps[-1].split(f'{checkpoint_name}_')[1].split('.pt')[0])
+                # ================ UPDATE IN FUTURE VERSION ================
+                
+            # ================ UPDATE IN FUTURE VERSION ================
+            try:
+                return ckp_index, torch.load(self.checkpoint_dir + "{}-{}.pt".format(checkpoint_name, ckp_index))
+            except FileNotFoundError:
+                return ckp_index, torch.load(self.checkpoint_dir + "{}_{}.pt".format(checkpoint_name, ckp_index))
+            # ================ UPDATE IN FUTURE VERSION ================
 
     def auto_parse_info(self):
         return '&'.join(self.hyper_param_record)
-
 
     def add_graph(self, sess):
         assert self.writer is not None

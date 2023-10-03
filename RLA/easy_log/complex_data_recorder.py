@@ -10,8 +10,8 @@ from RLA.easy_log.time_step import time_step_holder
 from typing import Callable
 # video recorder
 
-def format_name(name, add_timestamp, cover):
-    save_path = osp.join(exp_manager.results_dir, name)
+def format_name(name, add_timestamp, cover, results_dir):
+    save_path = osp.join(results_dir, name)
     save_path_split = save_path.split('/')
     if add_timestamp:
         save_path = '/'.join(save_path_split[:-1]) + '/' + str(time_step_holder.get_time()) + "-" + str(save_path_split[-1])
@@ -24,8 +24,8 @@ def format_name(name, add_timestamp, cover):
 # figure recorder
 class MatplotlibRecorder:
     @classmethod
-    def save(cls, name=None, fig=None, cover=False, add_timestamp=True, **kwargs):
-        save_path = format_name(name, add_timestamp, cover)
+    def save(cls, name=None, fig=None, cover=False, add_timestamp=True, results_dir=None, **kwargs):
+        save_path = format_name(name, add_timestamp, cover, results_dir)
         if not osp.exists(save_path) or cover:
             if fig is not None:
                 fig.savefig(save_path, **kwargs)
@@ -35,7 +35,7 @@ class MatplotlibRecorder:
     @classmethod
     def pretty_plot_wrapper(cls, name:str, plot_func:Callable,
                             cover=False, legend_outside=False, pretty_plot=False, xlabel='', ylabel='', title='',
-                            add_timestamp=True, *args, **kwargs):
+                            add_timestamp=True, close_all_fig=True, results_dir=None, *args, **kwargs):
         """
         Save the customized plot figure to the RLA database.
 
@@ -64,6 +64,9 @@ class MatplotlibRecorder:
         :return:
         :rtype:
         """
+        plt.switch_backend('agg')
+        if results_dir is None:
+            results_dir = exp_manager.results_dir
         plt.cla()
         plot_func()
         lgd = plt.legend(prop={'size': 15}, loc=2 if legend_outside else None,
@@ -76,10 +79,12 @@ class MatplotlibRecorder:
             plt.title(title, fontsize=13)
             plt.grid(True)
         if lgd is not None:
-            cls.save(name, cover=cover, add_timestamp=add_timestamp, bbox_extra_artists=tuple([lgd]),
+            cls.save(name, cover=cover, add_timestamp=add_timestamp, bbox_extra_artists=tuple([lgd]), results_dir=results_dir,
                      bbox_inches='tight', *args, **kwargs)
         else:
             cls.save(name, cover=cover, add_timestamp=add_timestamp, *args, **kwargs)
+        if close_all_fig:
+            plt.close('all')
 
 class ImgRecorder:
     @classmethod

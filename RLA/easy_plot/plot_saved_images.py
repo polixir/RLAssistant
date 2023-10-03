@@ -4,7 +4,7 @@ import os
 from typing import Dict, List, Tuple, Type, Union, Optional, Callable
 from RLA.easy_plot.result_cls import ImgResult
 from RLA.easy_plot.utils import results_loader
-from RLA.easy_log.const import LOG, ARCHIVE_TESTER, OTHER_RESULTS, HYPARAM
+from RLA.easy_log.const import LOG, ARCHIVE_TESTER, OTHER_RESULTS, HYPARAM_FILE_NAME
 from RLA.query_tool import OtherQueryResult
 from RLA.easy_plot.result_cls import ImgResult
 import numpy as np
