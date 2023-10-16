@@ -14,7 +14,7 @@ RLA has decoupled from the training code and only some additional configurations
 
 [comment]: <> (The logger function of RLA is forked from and compatible with the logger object in [openai/baselines]&#40;https://github.com/openai/baselines&#41;. You can transfer your logging system easily from the "baselines.logger" by modifying the import lines &#40;i.e., ```from baselines import logger``` -> ```from RLA import logger```&#41;.)
 
-**Instead of using a document for each function, we give the best practices of RLA in the following readme file, which summarizes the standard workflow we expect you to manage your experiments and all of the related api. refer to the Workflow section for details.**
+**Instead of building a document for each function, we give the best practices of RLA in the following readme file, which summarizes the standard workflow we expect you to manage your experiments and all of the related api. refer to the Workflow section for details.**
 
 
 
@@ -22,11 +22,11 @@ RLA has decoupled from the training code and only some additional configurations
 ![](resource/framework.png)
 
 The core design principle of RLA is regarding all related information of each Experiment As A complex item in a Database (EaaD). 
-We design RLA to manage the experiments dataset by 
+We design RLA to manage the experiment dataset by 
 1. formulating, standardizing, and structuring the data items and tables of the "RL experiment database";
 2. provide tools for adding, deleting, modifying, and querying the items in the database.
 
-The followings are the detailed designs of EaaD and the implementation of RLA.
+The following are the detailed designs of EaaD and the implementation of RLA.
 ### Standardizing and Structuring the Experiment Database
 After integrating RLA into your project, we create a "database" implicitly configured by `rla_config.yaml`. 
 Each experiment we run will be indexed and stored as an item into a "table". In particular, RLA includes the following elements to construct an "RL experiment database".
