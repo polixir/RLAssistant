@@ -16,7 +16,6 @@ import os.path as osp
 import pprint
 import numpy as np
 
-
 from RLA.easy_log.time_step import time_step_holder
 from RLA.easy_log import logger
 from RLA.easy_log.const import *
@@ -85,7 +84,7 @@ def fork_tester_log_files(task_table_name, record_date):
     tester.private_config = load_tester.private_config
 
 
-class Tester(object,):
+class Tester(object, ):
 
     def __init__(self):
         self.__custom_recorder = {}
@@ -114,7 +113,8 @@ class Tester(object,):
     @deprecated_alias(task_name='task_table_name', private_config_path='rla_config', log_root='data_root')
     def configure(self, task_table_name: str, rla_config: Union[str, dict], data_root: str,
                   ignore_file_path: Optional[str] = None, run_file: Union[str, List[str]] = None,
-                  is_master_node: bool = False, code_root: Optional[str] = None, log_callback_fn: Optional[Callable] = None):
+                  is_master_node: bool = False, code_root: Optional[str] = None,
+                  log_callback_fn: Optional[Callable] = None):
         """
         The function to configure your exp_manager, which should be run before your experiments.
         :param task_table_name: define a ``table'' to store a collection of experiment data item.
@@ -198,7 +198,7 @@ class Tester(object,):
 
     def get_timstep(self):
         return time_step_holder.get_time()
-    
+
     def log_files_gen(self):
         info = None
         self.record_date = datetime.datetime.now()
@@ -207,13 +207,20 @@ class Tester(object,):
             info = self.auto_parse_info()
             info = '&' + info
         self.info = info
-        code_dir, _ = self.__create_file_directory(osp.join(self.data_root, CODE, self.task_table_name), '', is_file=False)
-        log_dir, _ = self.__create_file_directory(osp.join(self.data_root, LOG, self.task_table_name), '', is_file=False)
-        self.pkl_dir, self.pkl_file = self.__create_file_directory(osp.join(self.data_root, ARCHIVE_TESTER, self.task_table_name), '.pkl')
-        self.checkpoint_dir, _ = self.__create_file_directory(osp.join(self.data_root, CHECKPOINT, self.task_table_name), is_file=False)
-        self.results_dir, _ = self.__create_file_directory(osp.join(self.data_root, OTHER_RESULTS, self.task_table_name), is_file=False)
-        self.tmp_data_dir, _ = self.__create_file_directory(osp.join(self.data_root, TMP_DATA, self.task_table_name), is_file=False)
-        self.hyparameter_dir, _ = self.__create_file_directory(osp.join(self.data_root, HYPARAMETER, self.task_table_name), is_file=False)
+        code_dir, _ = self.__create_file_directory(osp.join(self.data_root, CODE, self.task_table_name), '',
+                                                   is_file=False)
+        log_dir, _ = self.__create_file_directory(osp.join(self.data_root, LOG, self.task_table_name), '',
+                                                  is_file=False)
+        self.pkl_dir, self.pkl_file = self.__create_file_directory(
+            osp.join(self.data_root, ARCHIVE_TESTER, self.task_table_name), '.pkl')
+        self.checkpoint_dir, _ = self.__create_file_directory(
+            osp.join(self.data_root, CHECKPOINT, self.task_table_name), is_file=False)
+        self.results_dir, _ = self.__create_file_directory(
+            osp.join(self.data_root, OTHER_RESULTS, self.task_table_name), is_file=False)
+        self.tmp_data_dir, _ = self.__create_file_directory(osp.join(self.data_root, TMP_DATA, self.task_table_name),
+                                                            is_file=False)
+        self.hyparameter_dir, _ = self.__create_file_directory(
+            osp.join(self.data_root, HYPARAMETER, self.task_table_name), is_file=False)
         self.log_dir = log_dir
         self.code_dir = code_dir
 
@@ -223,17 +230,18 @@ class Tester(object,):
         self._feed_hyper_params_to_tb()
         params = self.hyper_param
         for param_dir in [self.code_dir, self.log_dir, self.hyparameter_dir]:
-                try:
-                    with open(osp.join(param_dir, HYPARAM_FILE_NAME + '.yaml'), 'w') as f:
-                        from omegaconf import OmegaConf
-                        OmegaConf.save(config=params, f=f.name)
-                except Exception as e:
-                    with open(osp.join(param_dir, HYPARAM_FILE_NAME + '.json'), 'w') as f:
-                        json.dump(params, f, sort_keys=True, indent=4, allow_nan=True, default=lambda o: '<not serializable>')
-                        print("gen:", osp.join(param_dir, 'parameter.json'))
+            try:
+                with open(osp.join(param_dir, HYPARAM_FILE_NAME + '.yaml'), 'w') as f:
+                    from omegaconf import OmegaConf
+                    OmegaConf.save(config=params, f=f.name)
+            except Exception as e:
+                with open(osp.join(param_dir, HYPARAM_FILE_NAME + '.json'), 'w') as f:
+                    json.dump(params, f, sort_keys=True, indent=4, allow_nan=True,
+                              default=lambda o: '<not serializable>')
+                    print("gen:", osp.join(param_dir, 'parameter.json'))
         self.print_log_dir()
 
-    def update_log_files_location(self, root:str):
+    def update_log_files_location(self, root: str):
         """
         This function is designed for the requirement of using copied/moved experiment logs to other databases for downstream task.
         The location of the experiment logs might have changed compared with their original location.
@@ -246,10 +254,14 @@ class Tester(object,):
         task_table_name = self.get_task_table_name()
         code_dir, _ = self.__create_file_directory(osp.join(self.data_root, CODE, task_table_name), '', is_file=False)
         log_dir, _ = self.__create_file_directory(osp.join(self.data_root, LOG, task_table_name), '', is_file=False)
-        self.pkl_dir, self.pkl_file = self.__create_file_directory(osp.join(self.data_root, ARCHIVE_TESTER, task_table_name), '.pkl')
-        self.checkpoint_dir, _ = self.__create_file_directory(osp.join(self.data_root, CHECKPOINT, task_table_name), is_file=False)
-        self.results_dir, _ = self.__create_file_directory(osp.join(self.data_root, OTHER_RESULTS, task_table_name), is_file=False)
-        self.tmp_data_dir, _ = self.__create_file_directory(osp.join(self.data_root, TMP_DATA, self.task_table_name), is_file=False)
+        self.pkl_dir, self.pkl_file = self.__create_file_directory(
+            osp.join(self.data_root, ARCHIVE_TESTER, task_table_name), '.pkl')
+        self.checkpoint_dir, _ = self.__create_file_directory(osp.join(self.data_root, CHECKPOINT, task_table_name),
+                                                              is_file=False)
+        self.results_dir, _ = self.__create_file_directory(osp.join(self.data_root, OTHER_RESULTS, task_table_name),
+                                                           is_file=False)
+        self.tmp_data_dir, _ = self.__create_file_directory(osp.join(self.data_root, TMP_DATA, self.task_table_name),
+                                                            is_file=False)
         self.log_dir = log_dir
         self.code_dir = code_dir
         self.print_log_dir()
@@ -258,7 +270,7 @@ class Tester(object,):
         self.writer = None
         # logger configure
         logger.info("store file %s" % self.pkl_file)
-        logger.configure(self.log_dir, self.private_config["LOG_USED"], framework=self.private_config["DL_FRAMEWORK"], 
+        logger.configure(self.log_dir, self.private_config["LOG_USED"], framework=self.private_config["DL_FRAMEWORK"],
                          log_callback_fn=self.log_callback_fn)
         for fmt in logger.Logger.CURRENT.output_formats:
             if isinstance(fmt, logger.TensorBoardOutputFormat):
@@ -266,7 +278,7 @@ class Tester(object,):
         if "tensorboard" not in self.private_config["LOG_USED"]:
             time_step_holder.config(tf_log=False)
         else:
-            time_step_holder.config(tf_log=True)        
+            time_step_holder.config(tf_log=True)
 
     def log_file_copy(self, source_tester):
         assert isinstance(source_tester, Tester)
@@ -331,14 +343,16 @@ class Tester(object,):
                     v = self.hyper_param[sub_k]
                     for sub_k in sub_k_list[1:]:
                         v = v[sub_k]
-                    self.hyper_param_record.append(str(k) + '=' + str(v).replace('[', '{').replace(']', '}').replace('/', '_'))
+                    self.hyper_param_record.append(
+                        str(k) + '=' + str(v).replace('[', '{').replace(']', '}').replace('/', '_'))
                 except KeyError as e:
                     print(f"the current key to parsed is: {k}. Can not find a matching key for {sub_k}."
                           "\n Hint: do not include dot ('.') in your hyperparemeter name."
                           "\n The recorded hyper parameters are")
                     self.print_args()
             else:
-                self.hyper_param_record.append(str(k) + '=' + str(self.hyper_param[k]).replace('[', '{').replace(']', '}').replace('/', '_'))
+                self.hyper_param_record.append(
+                    str(k) + '=' + str(self.hyper_param[k]).replace('[', '{').replace(']', '}').replace('/', '_'))
 
     def add_summary_to_logger(self, summary, name='', simple_val=False, freq=20):
         """
@@ -369,6 +383,7 @@ class Tester(object,):
                         logger.record_tabular(name + '/' + inp_field.tag, inp_field.simple_value)
                     else:
                         pass
+
                 recursion_util(list_field)
                 logger.dump_tabular()
             else:
@@ -428,8 +443,8 @@ class Tester(object,):
                 ftp = ftp_factory(name=self.private_config["REMOTE_SETTING"]['file_transfer_protocol'],
                                   server=self.private_config["REMOTE_SETTING"]["ftp_server"],
                                   username=self.private_config["REMOTE_SETTING"]["username"],
-                                   password=self.private_config["REMOTE_SETTING"]["password"],
-                                   port=self.private_config["REMOTE_SETTING"]["port"])
+                                  password=self.private_config["REMOTE_SETTING"]["password"],
+                                  port=self.private_config["REMOTE_SETTING"]["port"])
                 if self.private_config["REMOTE_SETTING"]['file_transfer_protocol'] == 'ftp':
                     alternative_protocol = 'sftp'
                 else:
@@ -438,7 +453,8 @@ class Tester(object,):
                 logger.warn("sync: send success!")
             except Exception as e:
                 try:
-                    logger.warn("failed to send log files through {}: {} ".format(self.private_config["REMOTE_SETTING"]['file_transfer_protocol'], e))
+                    logger.warn("failed to send log files through {}: {} ".format(
+                        self.private_config["REMOTE_SETTING"]['file_transfer_protocol'], e))
                     logger.warn("try another protocol:", alternative_protocol)
                     ftp = ftp_factory(name=alternative_protocol,
                                       server=self.private_config["REMOTE_SETTING"]["ftp_server"],
@@ -472,13 +488,12 @@ class Tester(object,):
         for root, dirs, files in os.walk(directory):
             if log_type == 'dir':
                 search_list = dirs
-            elif log_type =='files':
+            elif log_type == 'files':
                 search_list = files
             else:
                 raise NotImplementedError
             for search_item in search_list:
                 if search_item.startswith(str(record_date.strftime("%H-%M-%S-%f"))):
-
                     file_found = search_item
                     break
         return directory, file_found
@@ -525,12 +540,11 @@ class Tester(object,):
             paths.append(osp.join(src, name))
         match_paths = list(set(spec.match_files(paths)))
         match_names = []
-        names  = list(names)
+        names = list(names)
         for idx, path in enumerate(paths):
             if path in match_paths:
                 match_names.append(names[idx])
         return match_names
-
 
     def __copy_source_code(self, run_file, code_dir):
         import shutil
@@ -539,7 +553,8 @@ class Tester(object,):
                 for file_name in run_file:
                     shutil.copy(file_name, code_dir)
             else:
-                shutil.copy(run_file, code_dir)        
+                shutil.copy(run_file, code_dir)
+
         if self.private_config["PROJECT_TYPE"]["backup_code_by"] == 'lib':
             assert os.listdir(code_dir) == []
             os.removedirs(code_dir)
@@ -550,7 +565,7 @@ class Tester(object,):
             if self.private_config["BACKUP_CONFIG"].get("backup_code_dir"):
                 for dir_name in self.private_config["BACKUP_CONFIG"]["backup_code_dir"]:
                     if os.path.isfile(osp.join(self.project_root, dir_name)):
-                        shutil.copy(osp.join(self.project_root, dir_name), osp.join(code_dir, dir_name))       
+                        shutil.copy(osp.join(self.project_root, dir_name), osp.join(code_dir, dir_name))
                     else:
                         shutil.copytree(osp.join(self.project_root, dir_name), osp.join(code_dir, dir_name),
                                         ignore=self.get_ignore_files)
@@ -568,14 +583,15 @@ class Tester(object,):
         """
         version_num = self.get_version_num()
         if version_num is None:
-            name_format = '{prefix}/{date}/{timestep} {ip} {info}'
+            name_format = os.path.join(prefix, '{date}', '{timestep} {ip} {info}')
         elif version_num == LOG_NAME_FORMAT_VERSION.V1:
-            name_format = '{prefix}/{date}/{timestep}_{ip}_{info}'
+            name_format = os.path.join(prefix, '{date}', '{timestep}_{ip}_{info}')
         else:
             raise RuntimeError("unknown version name", version_num)
         date = record_date.strftime("%Y/%m/%d")
-        return name_format.format(prefix=prefix, date=date, timestep=self.record_date_to_str(record_date),
-                                                             ip=str(self.ipaddr), info=self.info)
+        return name_format.format(prefix=prefix, date=date.replace('/', os.path.sep),
+                                  timestep=self.record_date_to_str(record_date),
+                                  ip=str(self.ipaddr), info=self.info)
 
     def record_date_to_str(self, record_date):
         return str(record_date.strftime("%H-%M-%S-%f"))
@@ -589,12 +605,12 @@ class Tester(object,):
             record_date = self.record_date
         name = self.log_name_formatter(prefix, record_date)
         directory = str(record_date.strftime("%Y/%m/%d"))
-        directory = osp.join(prefix, directory)
+        directory = osp.join(prefix, directory.replace('/', os.path.sep))
         if is_file:
             os.makedirs(directory, exist_ok=True)
             file_name = name + ext
         else:
-            directory = name + '/'
+            directory = name + os.path.sep
             os.makedirs(directory, exist_ok=True)
             file_name = ''
         return directory, file_name
@@ -610,7 +626,7 @@ class Tester(object,):
             # self.last_record_fph_time = cur_time
             logger.dump_tabular()
 
-    def time_record(self, name:str):
+    def time_record(self, name: str):
         """
         [deprecated] see RLA.easy_log.time_used_recorder
         record the consumed time of your code snippet. call this function to start a recorder.
@@ -624,7 +640,7 @@ class Tester(object,):
         assert name not in self._rc_start_time
         self._rc_start_time[name] = time.time()
 
-    def time_record_end(self, name:str):
+    def time_record_end(self, name: str):
         """
         [deprecated] see RLA.easy_log.time_used_recorder
         record the consumed time of your code snippet. call this function to start a recorder.
@@ -676,9 +692,9 @@ class Tester(object,):
         return self.time_step_holder.get_time()
 
     def set_timestep(self, ts):
-         self.time_step_holder.set_time(ts)
+        self.time_step_holder.set_time(ts)
 
-    def save_checkpoint(self, model_dict: Optional[dict] = None, related_variable: Optional[dict] = None, 
+    def save_checkpoint(self, model_dict: Optional[dict] = None, related_variable: Optional[dict] = None,
                         checkpoint_name: Optional[str] = 'checkpoint'):
         if self.dl_framework == FRAMEWORK.tensorflow:
             if checkpoint_name != 'checkpoint':
@@ -708,7 +724,7 @@ class Tester(object,):
             self.checkpoint_keep_list.append(iter)
             if len(self.checkpoint_keep_list) > self.max_to_keep:
                 for i in range(len(self.checkpoint_keep_list) - self.max_to_keep):
-                    rm_ckp_name = tester.checkpoint_dir + "{}_{}.pt".format(checkpoint_name, 
+                    rm_ckp_name = tester.checkpoint_dir + "{}_{}.pt".format(checkpoint_name,
                                                                             self.checkpoint_keep_list[i])
                     logger.info("rm the older checkpoint", rm_ckp_name)
                     os.remove(rm_ckp_name)
@@ -735,14 +751,14 @@ class Tester(object,):
                 ckpt_path = tf.train.latest_checkpoint(cpt_name, ckp_index)
             logger.info("load ckpt_path {}".format(ckpt_path))
             self.saver.restore(tf.get_default_session(), ckpt_path)
-            
+
             # ================ UPDATE IN FUTURE VERSION ================
             try:
                 max_iter = int(ckpt_path.split('-')[-1])
             except ValueError:
                 max_iter = int(ckpt_path.split('_')[-1])
             # ================ UPDATE IN FUTURE VERSION ================
-                
+
             return max_iter, None
         elif self.dl_framework == FRAMEWORK.torch:
             import torch
@@ -759,14 +775,14 @@ class Tester(object,):
             print("all checkpoints:")
             pprint.pprint(all_ckps)
             if ckp_index is None:
-                
+
                 # ================ UPDATE IN FUTURE VERSION ================
                 try:
                     ckp_index = int(all_ckps[-1].split(f'{checkpoint_name}-')[1].split('.pt')[0])
                 except ValueError:
                     ckp_index = int(all_ckps[-1].split(f'{checkpoint_name}_')[1].split('.pt')[0])
                 # ================ UPDATE IN FUTURE VERSION ================
-                
+
             # ================ UPDATE IN FUTURE VERSION ================
             try:
                 return ckp_index, torch.load(self.checkpoint_dir + "{}-{}.pt".format(checkpoint_name, ckp_index))
@@ -844,7 +860,6 @@ class Tester(object,):
         # formatted_log_name = self.log_name_formatter(self.get_task_table_name(), self.record_date)
         params = exp_manager.hyper_param
         # params['formatted_log_name'] = formatted_log_name
-
 
     def print_large_memory_variable(self):
         import sys
