@@ -10,14 +10,22 @@ from RLA.easy_log.time_step import time_step_holder
 from typing import Callable
 # video recorder
 
+import os
+import os.path as osp
+
+
 def format_name(name, add_timestamp, cover, results_dir):
     save_path = osp.join(results_dir, name)
-    save_path_split = save_path.split('/')
+    save_path_split = save_path.split(os.path.sep)
+
     if add_timestamp:
-        save_path = '/'.join(save_path_split[:-1]) + '/' + str(time_step_holder.get_time()) + "-" + str(save_path_split[-1])
+        save_path = os.path.sep.join(save_path_split[:-1]) + os.path.sep + str(time_step_holder.get_time()) + "-" + str(
+            save_path_split[-1])
+
     if not osp.exists(save_path) or cover:
-        save_dir = '/'.join(save_path.split('/')[:-1])
+        save_dir = os.path.sep.join(save_path.split(os.path.sep)[:-1])
         os.makedirs(save_dir, exist_ok=True)
+
     return save_path
 
 

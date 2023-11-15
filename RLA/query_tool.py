@@ -56,7 +56,7 @@ def extract_valid_index(regex):
     if sys_type == PLATFORM_TYPE.WIN:
         regex_pattern = r'\d{4}\\\d{2}\\\d{2}\\\d{2}-\d{2}-\d{2}-\d{6}'
     else:
-        regex_pattern = r'\d{4}\d{2}/\d{2}/\d{2}-\d{2}-\d{2}-\d{6}'
+        regex_pattern = r'\d{4}/\d{2}/\d{2}/\d{2}-\d{2}-\d{2}-\d{6}'
     if re.search(regex_pattern, regex):
         target_reg = re.search(regex_pattern, regex).group(0)
     else:
