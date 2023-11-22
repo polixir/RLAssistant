@@ -9,7 +9,7 @@
 
 
 ![](resource/logo.png)
-RLA is a tool for managing your RL experiments automatically (e.g., your hyper-parameters, logs, checkpoints, figures, code, etc.). 
+RLA is a tool for managing your RL experiments automatically (e.g., your hyper-parameters, logs, checkpoints, figures, code, etc.), which is forked from https://github.com/xionghuichen/RLAssistant.
 RLA has decoupled from the training code and only some additional configurations are needed. Before using RLA, we recommend you to read the section "Design Principles of RLA", which will be helpful for you to understand the basic logic of the repo. 
 
 [comment]: <> (The logger function of RLA is forked from and compatible with the logger object in [openai/baselines]&#40;https://github.com/openai/baselines&#41;. You can transfer your logging system easily from the "baselines.logger" by modifying the import lines &#40;i.e., ```from baselines import logger``` -> ```from RLA import logger```&#41;.)
