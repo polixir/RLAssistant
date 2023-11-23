@@ -219,13 +219,6 @@ for i in range(1000):
     # This allows you to track the value of the scalar over time (e.g. during training).
     logger.record_tabular("k", value)
     
-    # Optionally, create a TensorFlow summary for the scalar value (this can be used for additional analysis or visualization).
-    summary = tf.Summary()
-    
-    # Log the summary data to the RLA logger.
-    # This adds the scalar value to the log, along with any additional summary data (if present).
-    logger.log_from_tf_summary(summary)
-    
     # Dump the tabular data to the logger for storage and display.
     # This saves the logged data to disk (or other storage location) and displays it in the console (if desired).
     logger.dump_tabular()
