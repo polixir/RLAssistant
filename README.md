@@ -124,7 +124,7 @@ pip install -e .
 
 We build an example project to include most of the features of RLA, which can be seen in ./example/simplest_code. Now we summarize the steps to use it.
 
-### Config and run
+### Quick Start
 
 #### Step1: Configuration. 
 1. To configure the experiment "database", you need to create a YAML file rla_config.yaml. You can use the template provided in ./example/rla_config.yaml as a starting point.
