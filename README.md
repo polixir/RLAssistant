@@ -307,7 +307,7 @@ Currently, we develop the query tools based on two common scenarios: result visu
 
 Given any experiment named as `${task_name}/${index_name}`, we can find the line-by-line code in `${data_root}/code/${task_name}/${index_name}` and corresponding hyperparameters in `${data_root}/code/${task_name}/${index_name}/parameter.{json/yaml}`. We can configure the files to be stored in BACKUP_CONFIG in rla_config.yaml.
 
-You can use the `Compare with...` method in Pycharm or any `folder comparison` extension in vscode, e.g., [Compare Folders](https://marketplace.visualstudio.com/items?itemName=moshfeu.compare-folders), to compare the whole differences between any two experiments.
+You can use the `Compare with...` method in Pycharm or any `folder comparison` extension in vscode, e.g., [Compare Folders](https://marketplace.visualstudio.com/items?itemName=moshfeu.compare-folders) or [diff Folder](https://marketplace.visualstudio.com/items?itemName=L13RARY.l13-diff), to compare the whole differences between any two experiments.
 
 
 #### Modify: Get any parts of your results for post-process
@@ -343,7 +343,7 @@ your_tmp_data_dir = query_res.dirname
 
 ```
 
-#### Modify: continue to training or resume for another task
+#### Modify: continue training or resume for another task
 
 In our practice, a common scenario is to load  historical experiments/modules to resume training or for downstream tasks. In RLA, you can customize the related code based on the following pipeline:
 
