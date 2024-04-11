@@ -1,4 +1,3 @@
-
 import numpy as np
 import os.path as osp
 import os
@@ -17,6 +16,8 @@ import dill
 import json
 from RLA.easy_log.tester import Tester
 from RLA.utils.utils import get_dir_seperator
+
+
 class Filter(object):
     ALL = 'all'
     SMALL_TIMESTEP = 'small_ts'
@@ -31,15 +32,16 @@ class BasicLogTool(object):
         self.log_types = default_log_types.copy()
         if optional_log_type is not None:
             self.log_types.extend(optional_log_type)
-    
+
     def is_valid_index(self, regex):
         if re.search(r'\d{4}/\d{2}/\d{2}/\d{2}-\d{2}-\d{2}-\d{6}', regex):
             target_reg = re.search(r'\d{4}/\d{2}/\d{2}/\d{2}-\d{2}-\d{2}-\d{6}', regex).group(0)
         else:
             target_reg = None
         return target_reg
-    
-    def _find_small_timestep_log(self, proj_root, task_table_name, regex, timstep_upper_bound=np.inf, timestep_lower_bound=0):
+
+    def _find_small_timestep_log(self, proj_root, task_table_name, regex, timstep_upper_bound=np.inf,
+                                 timestep_lower_bound=0):
         small_timestep_regs = []
         root_dir_regex = osp.join(proj_root, LOG, task_table_name, regex)
         for root_dir in glob.glob(root_dir_regex):
@@ -56,14 +58,15 @@ class BasicLogTool(object):
                             except IndexError as e:
                                 pass
                             progress_csv_file = file_list[0] + '/progress.csv'
-                            if file_list[1] == ['tb'] or os.path.exists(progress_csv_file): # in root of logdir
+                            if file_list[1] == ['tb'] or os.path.exists(progress_csv_file):  # in root of logdir
                                 if not os.path.exists(progress_csv_file) or os.path.getsize(progress_csv_file) == 0:
                                     print("[delete] find an experiment without progress.csv.", file_list[0])
                                     if timestep_lower_bound <= 0:
                                         small_timestep_regs.append([target_reg, file_list[0]])
                                 else:
                                     try:
-                                        reader = pd.read_csv(progress_csv_file, chunksize=100000, quoting=csv.QUOTE_NONE,
+                                        reader = pd.read_csv(progress_csv_file, chunksize=100000,
+                                                             quoting=csv.QUOTE_NONE,
                                                              encoding='utf-8', index_col=False, comment='#')
                                         raw_df = pd.DataFrame()
                                         for chunk in reader:
@@ -73,21 +76,23 @@ class BasicLogTool(object):
                                         print("[found a log] time_step ", last_timestep, target_reg)
                                         if timestep_lower_bound <= last_timestep <= timstep_upper_bound:
                                             small_timestep_regs.append([target_reg, file_list[0]])
-                                            print("[delete] find an experiment satisfied timestep range. ", file_list[0])
+                                            print("[delete] find an experiment satisfied timestep range. ",
+                                                  file_list[0])
                                         else:
                                             print("[valid]")
                                     except Exception as e:
                                         print("Load progress.csv failed", e, "reg", target_reg)
                                         pass
-                            elif file_list[1] == ['events']: # in tb dir
+                            elif file_list[1] == ['events']:  # in tb dir
                                 pass
-                            elif 'events' in file_list[0]: # in event dir
+                            elif 'events' in file_list[0]:  # in event dir
                                 pass
-                            else: # empty dir
+                            else:  # empty dir
                                 if timestep_lower_bound <= 0:
                                     small_timestep_regs.append([target_reg, file_list[0]])
                                 print("[delete] find an experiment without any files. ", file_list[0])
         return small_timestep_regs
+
 
 class DownloadLogTool(BasicLogTool):
     def __init__(self, rla_config_path, proj_root, task, regex, *args, **kwargs):
@@ -103,6 +108,7 @@ class DownloadLogTool(BasicLogTool):
             empty = True
             for root_dir in glob.glob(root_dir_regex):
                 pass
+
 
 class DeleteLogTool(BasicLogTool):
     def __init__(self, proj_root, task_table_name, regex, filter, *args, **kwargs):
@@ -167,7 +173,8 @@ class DeleteLogTool(BasicLogTool):
             return 0
 
     def delete_small_timestep_log(self, skip_ask=False):
-        self.small_timestep_regs = self._find_small_timestep_log(self.proj_root, self.task_table_name, self.regex, timstep_upper_bound=self.filter.timstep_bound)
+        self.small_timestep_regs = self._find_small_timestep_log(self.proj_root, self.task_table_name, self.regex,
+                                                                 timstep_upper_bound=self.filter.timstep_bound)
         print("complete searching.")
         if skip_ask:
             s = 'y'
@@ -215,7 +222,7 @@ class ArchiveLogTool(BasicLogTool):
                 if os.path.exists(root_dir):
                     # remove the overlapped path.
                     septor = get_dir_seperator()
-                    archiving_target = osp.join(archive_root_dir, root_dir[prefix_len+1:])
+                    archiving_target = osp.join(archive_root_dir, root_dir[prefix_len + 1:])
                     archiving_target_dir = septor.join(archiving_target.split(septor)[:-1])
                     os.makedirs(archiving_target_dir, exist_ok=True)
                     if os.path.isdir(root_dir):
@@ -248,10 +255,10 @@ class ArchiveLogTool(BasicLogTool):
             self._archive_log(show=False)
 
 
-
 class MigrateLogTool(BasicLogTool):
-    def __init__(self, proj_root, task_table_name, regex, target_task_table_name, *args, **kwargs):
+    def __init__(self, proj_root, target_proj_root, task_table_name, regex, target_task_table_name, *args, **kwargs):
         self.proj_root = proj_root
+        self.target_proj_root = target_proj_root
         self.task_table_name = task_table_name
         self.regex = regex
         self.target_task_table_name = target_task_table_name
@@ -260,7 +267,7 @@ class MigrateLogTool(BasicLogTool):
     def _migrate_log(self, show=False):
         for log_type in self.log_types:
             root_dir_regex = osp.join(self.proj_root, log_type, self.task_table_name, self.regex)
-            target_root_dir = osp.join(self.proj_root, log_type, self.target_task_table_name)
+            target_root_dir = osp.join(self.target_proj_root, log_type, self.target_task_table_name)
             prefix_dir = osp.join(self.proj_root, log_type, self.task_table_name)
             prefix_len = len(prefix_dir)
             empty = True
@@ -269,7 +276,7 @@ class MigrateLogTool(BasicLogTool):
                 empty = False
                 if os.path.exists(root_dir):
                     # remove the overlapped path.
-                    archiving_target = osp.join(target_root_dir, root_dir[prefix_len+1:])
+                    archiving_target = osp.join(target_root_dir, root_dir[prefix_len + 1:])
 
                     septor = get_dir_seperator()
                     archiving_target_dir = septor.join(archiving_target.split(septor)[:-1])
@@ -303,7 +310,6 @@ class MigrateLogTool(BasicLogTool):
             self._migrate_log(show=False)
 
 
-
 class ViewLogTool(BasicLogTool):
     def __init__(self, proj_root, task_table_name, regex, *args, **kwargs):
         self.proj_root = proj_root
@@ -324,7 +330,8 @@ class ViewLogTool(BasicLogTool):
                                 print(f.read())
 
     def view_log(self, skip_ask=False):
-        found_regs = self._find_small_timestep_log(self.proj_root, self.task_table_name, self.regex, timestep_lower_bound=1)
+        found_regs = self._find_small_timestep_log(self.proj_root, self.task_table_name, self.regex,
+                                                   timestep_lower_bound=1)
         for res in found_regs:
             print("view experiments:", res[1])
             if skip_ask:
