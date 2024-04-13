@@ -13,8 +13,8 @@ import argparse
 def argsparser():
     parser = argparse.ArgumentParser("Migrate Log")
     # reduce setting
-    parser.add_argument('--proj_root', type=str, default='DATA_ROOT')
-    parser.add_argument('--target_proj_root', type=str, default='DATA_ROOT')
+    parser.add_argument('--proj_root', type=str, default=DATA_ROOT)
+    parser.add_argument('--target_proj_root', type=str, default=DATA_ROOT)
     parser.add_argument('--task_table', type=str)
     parser.add_argument('--target_task_table', type=str)
     parser.add_argument('--regex', type=str)
