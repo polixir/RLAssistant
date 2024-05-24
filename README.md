@@ -238,7 +238,12 @@ for i in range(1000):
 ```
 This code creates a new saver object and saves a checkpoint every 10 iterations of the loop.
 
-You can also just use `exp_manager.checkpoint_dir` to locate the checkpoint directory, then customize your saving code. When loading, you can use the following code to locate your experiments
+You can also just use `exp_manager.checkpoint_dir` to locate the checkpoint directory, then customize your saving code. 
+```python
+from RLA import exp_manager
+torch.model(model_dict={'A': model1, 'B': model2}, f=os.path.join(tester.checkpoint_dir, "best.pt"))
+```
+In this case, when loading, you can use the following code to locate your experiments
 ```python
 from RLA import single_experiment_query
 from RLA.easy_log.const import *
@@ -251,6 +256,7 @@ query_res = single_experiment_query(data_root, loaded_task_table_name, loaded_ta
 your_checkpoint_dir = query_res.dirname # it would be the same to the result of exp_manager.checkpoint_dir at the time you run the experiment.
 
 # [your code to load the neural network based on `your_checkpoint_dir`.]
+torch.load(os.path.join(your_checkpoint_dir, "best.pt"))
 ```
 
 **Record other types of data** 
