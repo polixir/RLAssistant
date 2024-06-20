@@ -260,7 +260,7 @@ torch.load(os.path.join(your_checkpoint_dir, "best.pt"))
 **record code snippets runtime statistics**
 
 You can also record some runtime statistics of any code snippets, including, number of calls, total time cost, cost per call, cost percentage thourgh the following way:
-```
+```python
 import time
 from RLA import logger
 for i in range(20):
