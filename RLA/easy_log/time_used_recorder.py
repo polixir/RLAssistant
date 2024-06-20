@@ -62,13 +62,9 @@ class TimeTracker:
         return info
 
     def log(self,exclude_lst=['csv']):
-        logger.info('---------time dashboard---------')
         for k in self.time_dict.keys():
             for entry_k,entry_v in self.statistic_entry(k).items():
                 logger.record_tabular('time_used/'+entry_k,entry_v,exclude=exclude_lst)
-                logger.info(f"[{entry_k}]: {entry_v}")
-            logger.info('')
-        logger.info('---------dashboard end---------')
 
 
 rc_start_time = {}

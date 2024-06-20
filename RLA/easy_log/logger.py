@@ -394,11 +394,11 @@ def make_output_format(format, ev_dir, log_suffix='', framework='tensorflow'):
 # API
 # ================================================================
 
-def open_time_tracker(self, name:str):
+def open_time_tracker(name:str):
     from RLA.easy_log.time_used_recorder import time_tracker
     return time_tracker(name)
 
-def log_time_tracker(self):
+def log_time_tracker():
     from RLA.easy_log.time_used_recorder import time_tracker
     time_tracker.log()
 

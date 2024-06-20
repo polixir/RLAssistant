@@ -11,9 +11,9 @@ def target_func(x):
     return np.tanh(np.mean(x, axis=-1, keepdims=True))
 
 
-RLA_REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-DATABASE_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-CODE_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+RLA_REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATABASE_ROOT = os.path.dirname(os.path.abspath(__file__))
+CODE_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'test_proj')
 
 
 class ManagerTest(BaseTest):
@@ -89,11 +89,12 @@ class ManagerTest(BaseTest):
         yaml['DL_FRAMEWORK'] = 'torch'
         self._init_proj(yaml)
         import time
-        for i in range(100):
-            with logger.open_time_tracker('sleep-10+2'):
-                time.sleep(10)
-                with logger.open_time_tracker('sleep-2'):
-                    time.sleep(2)
+        for i in range(20):
+            with logger.open_time_tracker('sleep-1+1'):
+                time.sleep(1)
+                if i % 4 == 0:
+                    with logger.open_time_tracker('sleep-1'):
+                        time.sleep(1)
             logger.log_time_tracker()
             logger.dump_tabular()
 
