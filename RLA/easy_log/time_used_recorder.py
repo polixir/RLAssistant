@@ -50,7 +50,7 @@ class TimeTracker:
         return {
             'total calls/'+name:self.time_dict[name].call_time,
             'total time cost/'+name:self.time_dict[name].time_cost,
-            'average time cost/'+name:self.time_dict[name].time_cost/(1e-6+self.time_dict[name].call_time),
+            'time cost per call/'+name:self.time_dict[name].time_cost/(1e-6+self.time_dict[name].call_time),
             'time cost percentage/'+name:self.time_dict[name].time_cost/(1e-6+t_passed)
         }
 

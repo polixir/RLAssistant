@@ -257,6 +257,41 @@ your_checkpoint_dir = query_res.dirname # it would be the same to the result of 
 torch.load(os.path.join(your_checkpoint_dir, "best.pt"))
 ```
 
+**record code snippets runtime statistics**
+
+You can also record some runtime statistics of any code snippets, including, number of calls, total time cost, cost per call, cost percentage thourgh the following way:
+```
+import time
+from RLA import logger
+for i in range(20):
+   with logger.open_time_tracker('sleep-1+1'):
+         time.sleep(1)
+         if i % 4 == 0:
+            with logger.open_time_tracker('sleep-1'):
+               time.sleep(1)
+   logger.set_time(i)
+   logger.log_time_tracker()
+   logger.dump_tabular()
+```
+The result will be
+
+```
+-------------------------------------------------------
+| time-step                                | 17       |
+| time_used/time cost per call/sleep-1     | 1        |
+| time_used/time cost per call/sleep-1+1   | 1.28     |
+| time_used/time cost percentage/sleep-1   | 0.206    |
+| time_used/time cost percentage/sleep-1+1 | 0.947    |
+| time_used/total calls/sleep-1            | 5        |
+| time_used/total calls/sleep-1+1          | 18       |
+| time_used/total time cost/sleep-1        | 5.01     |
+| time_used/total time cost/sleep-1+1      | 23       |
+| timestamp                                | 1.72e+09 |
+-------------------------------------------------------
+
+```
+
+
 **Record other types of data** 
 
 Apart from recording checkpoints, RLA also provides support for recording other types of data. Currently, you can record complex-structured data using tensorboard. Here's an example code snippet:

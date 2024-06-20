@@ -95,6 +95,7 @@ class ManagerTest(BaseTest):
                 if i % 4 == 0:
                     with logger.open_time_tracker('sleep-1'):
                         time.sleep(1)
+            logger.set_time(i)
             logger.log_time_tracker()
             logger.dump_tabular()
 
