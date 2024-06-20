@@ -26,7 +26,7 @@ class TimeTracker:
         self.t0=time.time()#to calc total time
         self.time_dict=dict()
 
-    def add(self,name='untitled'):
+    def __call__(self, name:str):
         """
         :param name: specify the SingleTimeTracker in the time_dict, recommend use
         line num in the scripts, like 'xxx.py Line xxx', can be easily got in python scripts using 
@@ -34,9 +34,6 @@ class TimeTracker:
         """
         if name not in self.time_dict.keys():
             self.time_dict.update({name:SingleTimeTracker(name)})
-        return self.time_dict[name]
-
-    def __call__(self, name:str):
         return self.time_dict[name]
         
     def clear(self):
@@ -53,7 +50,7 @@ class TimeTracker:
         return {
             'total calls/'+name:self.time_dict[name].call_time,
             'total time cost/'+name:self.time_dict[name].time_cost,
-            'average time cost/'+name:self.time_dict[name].time_cost/(1e-6+self.time_dict[name].call_time),
+            'time cost per call/'+name:self.time_dict[name].time_cost/(1e-6+self.time_dict[name].call_time),
             'time cost percentage/'+name:self.time_dict[name].time_cost/(1e-6+t_passed)
         }
 
@@ -65,16 +62,14 @@ class TimeTracker:
         return info
 
     def log(self,exclude_lst=['csv']):
-        logger.info('---------time dashboard---------')
         for k in self.time_dict.keys():
             for entry_k,entry_v in self.statistic_entry(k).items():
                 logger.record_tabular('time_used/'+entry_k,entry_v,exclude=exclude_lst)
-                logger.info(f"[{entry_k}]: {entry_v}")
-            logger.info('')
-        logger.info('---------dashboard end---------')
 
 
 rc_start_time = {}
+
+time_tracker = TimeTracker()
 
 def time_record(name):
     """

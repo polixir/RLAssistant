@@ -203,19 +203,17 @@ We record scalars by `RLA.logger`:
 from RLA import logger
 # Import TensorFlow for creating summary data to log
 import tensorflow as tf
-# Import the time step holder, holding a global instance that tracks the current time step
-from RLA import time_step_holder
 
 # Iterate for 1000 time steps (or any number of time steps/epochs)
 for i in range(1000):
     # Update the time step holder with the current time step (iteration/epoch/whatever you need) value.
     # You just need to set the value once when it is changed.
-    time_step_holder.set_time(i)
+    logger.set_time(i)
     
     # Set the scalar value to record
     value = 1
     
-    # Record the scalar value using the RLA logger, with "k" as the key and the global time step instance in time_step_holder as the step value.
+    # Record the scalar value using the RLA logger, with "k" as the key and the global time step object ``time_step_holder'' inner RLA as the step value, which is set when calling logger.set_time(i).
     # This allows you to track the value of the scalar over time (e.g. during training).
     logger.record_tabular("k", value)
     
@@ -258,6 +256,41 @@ your_checkpoint_dir = query_res.dirname # it would be the same to the result of 
 # [your code to load the neural network based on `your_checkpoint_dir`.]
 torch.load(os.path.join(your_checkpoint_dir, "best.pt"))
 ```
+
+**record code snippets runtime statistics**
+
+You can also record some runtime statistics of any code snippets, including, number of calls, total time cost, cost per call, cost percentage thourgh the following way:
+```
+import time
+from RLA import logger
+for i in range(20):
+   with logger.open_time_tracker('sleep-1+1'):
+         time.sleep(1)
+         if i % 4 == 0:
+            with logger.open_time_tracker('sleep-1'):
+               time.sleep(1)
+   logger.set_time(i)
+   logger.log_time_tracker()
+   logger.dump_tabular()
+```
+The result will be
+
+```
+-------------------------------------------------------
+| time-step                                | 17       |
+| time_used/time cost per call/sleep-1     | 1        |
+| time_used/time cost per call/sleep-1+1   | 1.28     |
+| time_used/time cost percentage/sleep-1   | 0.206    |
+| time_used/time cost percentage/sleep-1+1 | 0.947    |
+| time_used/total calls/sleep-1            | 5        |
+| time_used/total calls/sleep-1+1          | 18       |
+| time_used/total time cost/sleep-1        | 5.01     |
+| time_used/total time cost/sleep-1+1      | 23       |
+| timestamp                                | 1.72e+09 |
+-------------------------------------------------------
+
+```
+
 
 **Record other types of data** 
 
@@ -394,7 +427,7 @@ your_replay_buffer_loader(replay_buffer_path)
 if continue_to_train:
    # 6: copy all the log data in the load experiment to the new experiment.
    fork_log_file_fn(loaded_task_table_name, loaded_task_date, rla_data_root, sync_timestep=True)
-   start_steps = exp_manager.time_step_holder.get_time()
+   start_steps = logger.get_time()
 your_trainer.train()
 ```
 
