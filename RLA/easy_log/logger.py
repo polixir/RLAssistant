@@ -394,6 +394,14 @@ def make_output_format(format, ev_dir, log_suffix='', framework='tensorflow'):
 # API
 # ================================================================
 
+def open_time_tracker(self, name:str):
+    from RLA.easy_log.time_used_recorder import time_tracker
+    return time_tracker(name)
+
+def log_time_tracker(self):
+    from RLA.easy_log.time_used_recorder import time_tracker
+    time_tracker.log()
+
 def timestep():
     from RLA.easy_log.time_step import time_step_holder
     return time_step_holder.get_time()
@@ -402,6 +410,11 @@ def timestep():
     #         return fmt.step
     # raise NotImplementedError
 
+get_time = timestep
+
+def set_time(ts:int):
+    from RLA.easy_log.time_step import time_step_holder
+    return time_step_holder.set_time(ts)
 
 ma_dict = {}
 

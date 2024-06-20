@@ -203,19 +203,17 @@ We record scalars by `RLA.logger`:
 from RLA import logger
 # Import TensorFlow for creating summary data to log
 import tensorflow as tf
-# Import the time step holder, holding a global instance that tracks the current time step
-from RLA import time_step_holder
 
 # Iterate for 1000 time steps (or any number of time steps/epochs)
 for i in range(1000):
     # Update the time step holder with the current time step (iteration/epoch/whatever you need) value.
     # You just need to set the value once when it is changed.
-    time_step_holder.set_time(i)
+    logger.set_time(i)
     
     # Set the scalar value to record
     value = 1
     
-    # Record the scalar value using the RLA logger, with "k" as the key and the global time step instance in time_step_holder as the step value.
+    # Record the scalar value using the RLA logger, with "k" as the key and the global time step object ``time_step_holder'' inner RLA as the step value, which is set when calling logger.set_time(i).
     # This allows you to track the value of the scalar over time (e.g. during training).
     logger.record_tabular("k", value)
     
@@ -394,7 +392,7 @@ your_replay_buffer_loader(replay_buffer_path)
 if continue_to_train:
    # 6: copy all the log data in the load experiment to the new experiment.
    fork_log_file_fn(loaded_task_table_name, loaded_task_date, rla_data_root, sync_timestep=True)
-   start_steps = exp_manager.time_step_holder.get_time()
+   start_steps = logger.get_time()
 your_trainer.train()
 ```
 

@@ -56,7 +56,7 @@ class ManagerTest(BaseTest):
         exp_manager.new_saver(var_prefix='', max_to_keep=1)
         # synthetic target function.
         for i in range(0, 100):
-            exp_manager.time_step_holder.set_time(i)
+            logger.set_time(i)
             x_input = np.random.normal(0, 3, [64, kwargs["input_size"]])
             y = target_func(x_input)
             loss_out, y_pred = sess.run([loss, out, opt], feed_dict={X_ph: x_input, y_ph: y})[:-1]
@@ -78,6 +78,24 @@ class ManagerTest(BaseTest):
                 mpr.pretty_plot_wrapper('react_func', plot_func, xlabel='x', ylabel='y', title='react test')
             logger.dump_tabular()
 
+    def test_time_tracker(self):
+        kwargs = {
+            'input_size': 16,
+            'learning_rate': 0.0001,
+        }
+        exp_manager.set_hyper_param(**kwargs)
+        exp_manager.add_record_param(['input_size'])
+        yaml = self._load_rla_config()
+        yaml['DL_FRAMEWORK'] = 'torch'
+        self._init_proj(yaml)
+        import time
+        for i in range(100):
+            with logger.open_time_tracker('sleep-10+2'):
+                time.sleep(10)
+                with logger.open_time_tracker('sleep-2'):
+                    time.sleep(2)
+            logger.log_time_tracker()
+            logger.dump_tabular()
 
     def test_load_checkpoint_tf(self):
         pass
@@ -100,7 +118,7 @@ class ManagerTest(BaseTest):
         exp_manager.new_saver(var_prefix='', max_to_keep=1)
         optimizer = th.optim.Adam(mlp.parameters(), lr=kwargs['learning_rate'])
         for i in range(0, 100):
-            exp_manager.time_step_holder.set_time(i)
+            logger.set_time(i)
             x_input = np.random.normal(0, 3, [64, kwargs["input_size"]])
             x_input = x_input.astype(np.float32)
             y = target_func(x_input)
@@ -124,6 +142,7 @@ class ManagerTest(BaseTest):
                     predY = mlp(to_tensor(testX)).detach().cpu().numpy()
                     plt.plot(testX.mean(axis=-1), predY.mean(axis=-1), label='pred')
                     plt.plot(testX.mean(axis=-1), testY.mean(axis=-1), label='real')
+                
                 mpr.pretty_plot_wrapper('react_func', plot_func, xlabel='x', ylabel='y', title='react test')
             if i % 20 == 0:
                 exp_manager.save_checkpoint(model_dict={'mlp': mlp.state_dict(), 'opt': optimizer.state_dict(), 'epoch': i})
@@ -169,7 +188,7 @@ class ManagerTest(BaseTest):
 
         self._init_proj(yaml, is_master_node=False)
         for i in range(0, 100):
-            exp_manager.time_step_holder.set_time(i)
+            logger.set_time(i)
             logger.record_tabular("i", i)
             logger.dump_tabular()
             if i % 10 == 0:

@@ -26,7 +26,7 @@ class TimeTracker:
         self.t0=time.time()#to calc total time
         self.time_dict=dict()
 
-    def add(self,name='untitled'):
+    def __call__(self, name:str):
         """
         :param name: specify the SingleTimeTracker in the time_dict, recommend use
         line num in the scripts, like 'xxx.py Line xxx', can be easily got in python scripts using 
@@ -34,9 +34,6 @@ class TimeTracker:
         """
         if name not in self.time_dict.keys():
             self.time_dict.update({name:SingleTimeTracker(name)})
-        return self.time_dict[name]
-
-    def __call__(self, name:str):
         return self.time_dict[name]
         
     def clear(self):
@@ -75,6 +72,8 @@ class TimeTracker:
 
 
 rc_start_time = {}
+
+time_tracker = TimeTracker()
 
 def time_record(name):
     """
