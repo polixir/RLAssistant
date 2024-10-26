@@ -11,6 +11,10 @@ BACKUP_CONFIG:
   backup_code_dir:
     - 'project'
   lib_dir: './build/lib/'
+  ignore_code_paths:
+    - '.gitignore'
+    - '.backupcode_ignore'
+
 # option: 'stdout', 'log', 'tensorboard', 'csv'
 LOG_USED:
   - 'stdout'

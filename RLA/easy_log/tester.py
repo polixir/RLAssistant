@@ -38,7 +38,9 @@ def import_hyper_parameters(task_table_name, record_date):
     :param record_date:
     :return:
     """
-    logger.warn("the function is deprecated. please check the ExperimentLoader as the new implementation")
+    logger.warn(
+        "the function is deprecated. please check the ExperimentLoader as the new implementation"
+    )
     global tester
     assert isinstance(tester, Tester)
     load_tester = tester.load_tester(record_date, task_table_name, tester.data_root)
@@ -54,12 +56,14 @@ def load_from_record_date(task_table_name, record_date):
     :param record_date:
     :return:
     """
-    logger.warn("the function is deprecated. please check the ExperimentLoader as the new implementation")
+    logger.warn(
+        "the function is deprecated. please check the ExperimentLoader as the new implementation"
+    )
     global tester
     assert isinstance(tester, Tester)
     load_tester = tester.load_tester(record_date, task_table_name, tester.data_root)
     # load checkpoint
-    load_tester.new_saver(var_prefix='', max_to_keep=1)
+    load_tester.new_saver(var_prefix="", max_to_keep=1)
     load_iter, load_res = load_tester.load_checkpoint()
     tester.time_step_holder.set_time(load_iter)
     tester.print_log_dir()
@@ -73,7 +77,9 @@ def fork_tester_log_files(task_table_name, record_date):
     :param record_date:
     :return:
     """
-    logger.warn("the function is deprecated. please check the ExperimentLoader as the new implementation")
+    logger.warn(
+        "the function is deprecated. please check the ExperimentLoader as the new implementation"
+    )
     global tester
     assert isinstance(tester, Tester)
     load_tester = tester.load_tester(record_date, task_table_name, tester.data_root)
@@ -85,7 +91,9 @@ def fork_tester_log_files(task_table_name, record_date):
     tester.private_config = load_tester.private_config
 
 
-class Tester(object,):
+class Tester(
+    object,
+):
 
     def __init__(self):
         self.__custom_recorder = {}
@@ -111,10 +119,22 @@ class Tester(object,):
         self.checkpoint_keep_list = None
         self.log_name_format_version = LOG_NAME_FORMAT_VERSION.V1
 
-    @deprecated_alias(task_name='task_table_name', private_config_path='rla_config', log_root='data_root')
-    def configure(self, task_table_name: str, rla_config: Union[str, dict], data_root: str,
-                  ignore_file_path: Optional[str] = None, run_file: Union[str, List[str]] = None,
-                  is_master_node: bool = False, code_root: Optional[str] = None, log_callback_fn: Optional[Callable] = None):
+    @deprecated_alias(
+        task_name="task_table_name",
+        private_config_path="rla_config",
+        log_root="data_root",
+    )
+    def configure(
+        self,
+        task_table_name: str,
+        rla_config: Union[str, dict],
+        data_root: str,
+        ignore_file_path: Optional[str] = None,
+        run_file: Union[str, List[str]] = None,
+        is_master_node: bool = False,
+        code_root: Optional[str] = None,
+        log_callback_fn: Optional[Callable] = None,
+    ):
         """
         The function to configure your exp_manager, which should be run before your experiments.
         :param task_table_name: define a ``table'' to store a collection of experiment data item.
@@ -156,21 +176,27 @@ class Tester(object,):
             if isinstance(rla_config, str):
                 self.project_root = self.septor.join(rla_config.split(self.septor)[:-1])
             else:
-                raise NotImplementedError("If you pass the rla_config dict directly, "
-                                          "you should define the root of your codebase (for backup) explicitly by pass the code_root.")
+                raise NotImplementedError(
+                    "If you pass the rla_config dict directly, "
+                    "you should define the root of your codebase (for backup) explicitly by pass the code_root."
+                )
         else:
             self.project_root = code_root
         for k, v in self.private_config.items():
             logger.info("k: {}, v: {}".format(k, v))
 
     def get_task_table_name(self):
-        task_table_name = getattr(self, 'task_table_name', None)
+        task_table_name = getattr(self, "task_table_name", None)
         if task_table_name is None:
-            task_table_name = getattr(self, 'task_name', None)
-            print("[WARN] you are using an old-version RLA. "
-                  "Some attributes' name have been changed (task_name->task_table_name).")
+            task_table_name = getattr(self, "task_name", None)
+            print(
+                "[WARN] you are using an old-version RLA. "
+                "Some attributes' name have been changed (task_name->task_table_name)."
+            )
             if task_table_name is None:
-                raise RuntimeError("invalid ExpManager: task_table_name cannot be found", )
+                raise RuntimeError(
+                    "invalid ExpManager: task_table_name cannot be found",
+                )
         return task_table_name
 
     def set_hyper_param(self, **argkw):
@@ -198,22 +224,36 @@ class Tester(object,):
 
     def get_timstep(self):
         return time_step_holder.get_time()
-    
+
     def log_files_gen(self):
         info = None
         self.record_date = datetime.datetime.now()
         logger.info("gen log files for record date : {}".format(self.record_date))
         if info is None:
             info = self.auto_parse_info()
-            info = '&' + info
+            info = "&" + info
         self.info = info
-        code_dir, _ = self.__create_file_directory(osp.join(self.data_root, CODE, self.task_table_name), '', is_file=False)
-        log_dir, _ = self.__create_file_directory(osp.join(self.data_root, LOG, self.task_table_name), '', is_file=False)
-        self.pkl_dir, self.pkl_file = self.__create_file_directory(osp.join(self.data_root, ARCHIVE_TESTER, self.task_table_name), '.pkl')
-        self.checkpoint_dir, _ = self.__create_file_directory(osp.join(self.data_root, CHECKPOINT, self.task_table_name), is_file=False)
-        self.results_dir, _ = self.__create_file_directory(osp.join(self.data_root, OTHER_RESULTS, self.task_table_name), is_file=False)
-        self.tmp_data_dir, _ = self.__create_file_directory(osp.join(self.data_root, TMP_DATA, self.task_table_name), is_file=False)
-        self.hyparameter_dir, _ = self.__create_file_directory(osp.join(self.data_root, HYPARAMETER, self.task_table_name), is_file=False)
+        code_dir, _ = self.__create_file_directory(
+            osp.join(self.data_root, CODE, self.task_table_name), "", is_file=False
+        )
+        log_dir, _ = self.__create_file_directory(
+            osp.join(self.data_root, LOG, self.task_table_name), "", is_file=False
+        )
+        self.pkl_dir, self.pkl_file = self.__create_file_directory(
+            osp.join(self.data_root, ARCHIVE_TESTER, self.task_table_name), ".pkl"
+        )
+        self.checkpoint_dir, _ = self.__create_file_directory(
+            osp.join(self.data_root, CHECKPOINT, self.task_table_name), is_file=False
+        )
+        self.results_dir, _ = self.__create_file_directory(
+            osp.join(self.data_root, OTHER_RESULTS, self.task_table_name), is_file=False
+        )
+        self.tmp_data_dir, _ = self.__create_file_directory(
+            osp.join(self.data_root, TMP_DATA, self.task_table_name), is_file=False
+        )
+        self.hyparameter_dir, _ = self.__create_file_directory(
+            osp.join(self.data_root, HYPARAMETER, self.task_table_name), is_file=False
+        )
         self.log_dir = log_dir
         self.code_dir = code_dir
 
@@ -223,17 +263,25 @@ class Tester(object,):
         self._feed_hyper_params_to_tb()
         params = self.hyper_param
         for param_dir in [self.code_dir, self.log_dir, self.hyparameter_dir]:
-                try:
-                    with open(osp.join(param_dir, HYPARAM_FILE_NAME + '.yaml'), 'w') as f:
-                        from omegaconf import OmegaConf
-                        OmegaConf.save(config=params, f=f.name)
-                except Exception as e:
-                    with open(osp.join(param_dir, HYPARAM_FILE_NAME + '.json'), 'w') as f:
-                        json.dump(params, f, sort_keys=True, indent=4, allow_nan=True, default=lambda o: '<not serializable>')
-                        print("gen:", osp.join(param_dir, 'parameter.json'))
+            try:
+                with open(osp.join(param_dir, HYPARAM_FILE_NAME + ".yaml"), "w") as f:
+                    from omegaconf import OmegaConf
+
+                    OmegaConf.save(config=params, f=f.name)
+            except Exception as e:
+                with open(osp.join(param_dir, HYPARAM_FILE_NAME + ".json"), "w") as f:
+                    json.dump(
+                        params,
+                        f,
+                        sort_keys=True,
+                        indent=4,
+                        allow_nan=True,
+                        default=lambda o: "<not serializable>",
+                    )
+                    print("gen:", osp.join(param_dir, "parameter.json"))
         self.print_log_dir()
 
-    def update_log_files_location(self, root:str):
+    def update_log_files_location(self, root: str):
         """
         This function is designed for the requirement of using copied/moved experiment logs to other databases for downstream task.
         The location of the experiment logs might have changed compared with their original location.
@@ -244,12 +292,24 @@ class Tester(object,):
         self.data_root = root
 
         task_table_name = self.get_task_table_name()
-        code_dir, _ = self.__create_file_directory(osp.join(self.data_root, CODE, task_table_name), '', is_file=False)
-        log_dir, _ = self.__create_file_directory(osp.join(self.data_root, LOG, task_table_name), '', is_file=False)
-        self.pkl_dir, self.pkl_file = self.__create_file_directory(osp.join(self.data_root, ARCHIVE_TESTER, task_table_name), '.pkl')
-        self.checkpoint_dir, _ = self.__create_file_directory(osp.join(self.data_root, CHECKPOINT, task_table_name), is_file=False)
-        self.results_dir, _ = self.__create_file_directory(osp.join(self.data_root, OTHER_RESULTS, task_table_name), is_file=False)
-        self.tmp_data_dir, _ = self.__create_file_directory(osp.join(self.data_root, TMP_DATA, self.task_table_name), is_file=False)
+        code_dir, _ = self.__create_file_directory(
+            osp.join(self.data_root, CODE, task_table_name), "", is_file=False
+        )
+        log_dir, _ = self.__create_file_directory(
+            osp.join(self.data_root, LOG, task_table_name), "", is_file=False
+        )
+        self.pkl_dir, self.pkl_file = self.__create_file_directory(
+            osp.join(self.data_root, ARCHIVE_TESTER, task_table_name), ".pkl"
+        )
+        self.checkpoint_dir, _ = self.__create_file_directory(
+            osp.join(self.data_root, CHECKPOINT, task_table_name), is_file=False
+        )
+        self.results_dir, _ = self.__create_file_directory(
+            osp.join(self.data_root, OTHER_RESULTS, task_table_name), is_file=False
+        )
+        self.tmp_data_dir, _ = self.__create_file_directory(
+            osp.join(self.data_root, TMP_DATA, self.task_table_name), is_file=False
+        )
         self.log_dir = log_dir
         self.code_dir = code_dir
         self.print_log_dir()
@@ -258,15 +318,19 @@ class Tester(object,):
         self.writer = None
         # logger configure
         logger.info("store file %s" % self.pkl_file)
-        logger.configure(self.log_dir, self.private_config["LOG_USED"], framework=self.private_config["DL_FRAMEWORK"], 
-                         log_callback_fn=self.log_callback_fn)
+        logger.configure(
+            self.log_dir,
+            self.private_config["LOG_USED"],
+            framework=self.private_config["DL_FRAMEWORK"],
+            log_callback_fn=self.log_callback_fn,
+        )
         for fmt in logger.Logger.CURRENT.output_formats:
             if isinstance(fmt, logger.TensorBoardOutputFormat):
                 self.writer = fmt.writer
         if "tensorboard" not in self.private_config["LOG_USED"]:
             time_step_holder.config(tf_log=False)
         else:
-            time_step_holder.config(tf_log=True)        
+            time_step_holder.config(tf_log=True)
 
     def log_file_copy(self, source_tester):
         assert isinstance(source_tester, Tester)
@@ -279,13 +343,17 @@ class Tester(object,):
             shutil.copytree(source_tester.results_dir, self.results_dir)
         else:
             print("[load warning]: can not find results dir")
-        if hasattr(source_tester, "tmp_data_dir") and os.path.exists(source_tester.tmp_data_dir):
+        if hasattr(source_tester, "tmp_data_dir") and os.path.exists(
+            source_tester.tmp_data_dir
+        ):
             shutil.rmtree(self.tmp_data_dir)
             shutil.copytree(source_tester.tmp_data_dir, self.tmp_data_dir)
         else:
             print("[load warning]: can not find tmp_data dir")
 
-        if hasattr(source_tester, "hyparameter_dir") and os.path.exists(source_tester.hyparameter_dir):
+        if hasattr(source_tester, "hyparameter_dir") and os.path.exists(
+            source_tester.hyparameter_dir
+        ):
             shutil.rmtree(self.hyparameter_dir)
             shutil.copytree(source_tester.hyparameter_dir, self.hyparameter_dir)
         else:
@@ -302,49 +370,67 @@ class Tester(object,):
             self.custom_data[k] = v
 
     def task_gen(self, task_pattern_list):
-        return '-'.join(task_pattern_list)
+        return "-".join(task_pattern_list)
 
     def print_log_dir(self):
         logger.info("log dir: {}".format(self.log_dir))
         logger.info("pkl_file: {}".format(self.pkl_file))
         logger.info("checkpoint_dir: {}".format(self.checkpoint_dir))
         logger.info("results_dir: {}".format(self.results_dir))
-        if hasattr(self, 'tmp_data_dir'):
+        if hasattr(self, "tmp_data_dir"):
             logger.info("tmp_data_dir: {}".format(self.tmp_data_dir))
 
     @classmethod
     def load_tester(cls, record_date, task_table_name, log_root):
         logger.info("load tester")
         from RLA import single_experiment_query
-        query_res = single_experiment_query(log_root, task_table_name, record_date, ARCHIVE_TESTER)
+
+        query_res = single_experiment_query(
+            log_root, task_table_name, record_date, ARCHIVE_TESTER
+        )
         load_tester = query_res.exp_manager
 
         return load_tester
 
     def add_record_param(self, keys):
         for k in keys:
-            if '.' in k:
+            if "." in k:
                 sub_k = None
                 try:
-                    sub_k_list = k.split('.')
+                    sub_k_list = k.split(".")
                     sub_k = sub_k_list[0]
                     v = self.hyper_param[sub_k]
                     for sub_k in sub_k_list[1:]:
                         v = v[sub_k]
-                    self.hyper_param_record.append(str(k) + '=' + str(v).replace('[', '{').replace(']', '}').replace('/', '_'))
+                    self.hyper_param_record.append(
+                        str(k)
+                        + "="
+                        + str(v).replace("[", "{").replace("]", "}").replace("/", "_")
+                    )
                 except KeyError as e:
-                    print(f"the current key to parsed is: {k}. Can not find a matching key for {sub_k}."
-                          "\n Hint: do not include dot ('.') in your hyperparemeter name."
-                          "\n The recorded hyper parameters are")
+                    print(
+                        f"the current key to parsed is: {k}. Can not find a matching key for {sub_k}."
+                        "\n Hint: do not include dot ('.') in your hyperparemeter name."
+                        "\n The recorded hyper parameters are"
+                    )
                     self.print_args()
             else:
-                self.hyper_param_record.append(str(k) + '=' + str(self.hyper_param[k]).replace('[', '{').replace(']', '}').replace('/', '_'))
+                self.hyper_param_record.append(
+                    str(k)
+                    + "="
+                    + str(self.hyper_param[k])
+                    .replace("[", "{")
+                    .replace("]", "}")
+                    .replace("/", "_")
+                )
 
-    def add_summary_to_logger(self, summary, name='', simple_val=False, freq=20):
+    def add_summary_to_logger(self, summary, name="", simple_val=False, freq=20):
         """
         [deprecated] see RLA.logger.log_from_tf_summary
         """
-        logger.warn("add_summary_to_logger is deprecated. See RLA.logger.log_from_tf_summary.")
+        logger.warn(
+            "add_summary_to_logger is deprecated. See RLA.logger.log_from_tf_summary."
+        )
         if "tensorboard" not in self.private_config["LOG_USED"]:
             logger.info("skip adding summary to tb")
             return
@@ -356,6 +442,7 @@ class Tester(object,):
             summary_ts = 0
         if freq <= 0 or summary_ts not in self.summary_add_dict[name]:
             from tensorflow.core.framework import summary_pb2
+
             summ = summary_pb2.Summary()
             summ.ParseFromString(summary)
             if simple_val:
@@ -365,10 +452,13 @@ class Tester(object,):
                     if hasattr(inp_field, "__getitem__"):
                         for inp in inp_field:
                             recursion_util(inp)
-                    elif hasattr(inp_field, 'simple_value'):
-                        logger.record_tabular(name + '/' + inp_field.tag, inp_field.simple_value)
+                    elif hasattr(inp_field, "simple_value"):
+                        logger.record_tabular(
+                            name + "/" + inp_field.tag, inp_field.simple_value
+                        )
                     else:
                         pass
+
                 recursion_util(list_field)
                 logger.dump_tabular()
             else:
@@ -404,15 +494,19 @@ class Tester(object,):
         logger.warn("sync: start")
         remote_data_root = self.private_config["REMOTE_SETTING"].get("remote_data_root")
         if remote_data_root is None:
-            remote_data_root = self.private_config["REMOTE_SETTING"].get("remote_log_root")
-            logger.warn("the parameter remote_log_root will be renamed to remote_data_root in future versions.")
+            remote_data_root = self.private_config["REMOTE_SETTING"].get(
+                "remote_log_root"
+            )
+            logger.warn(
+                "the parameter remote_log_root will be renamed to remote_data_root in future versions."
+            )
         else:
             raise RuntimeError("miss remote_log_root in rla_config")
 
         def send_data(ftp_obj):
             for root, dirs, files in os.walk(self.log_dir):
                 suffix = root.split("/{}/".format(LOG))
-                assert len(suffix) == 2, "root should only have one pattern \"/log/\""
+                assert len(suffix) == 2, 'root should only have one pattern "/log/"'
                 remote_root = osp.join(remote_data_root, LOG, suffix[1])
                 local_root = root
                 logger.warn("sync {} <- {}".format(remote_root, local_root))
@@ -421,40 +515,71 @@ class Tester(object,):
 
         if self.private_config["SEND_LOG_FILE"] and not self.is_master_node:
             from RLA.auto_ftp import ftp_factory
-            alternative_protocol = 'ftp'
+
+            alternative_protocol = "ftp"
             try:
-                if 'file_transfer_protocol' not in self.private_config["REMOTE_SETTING"].keys():
-                    self.private_config["REMOTE_SETTING"]['file_transfer_protocol'] = 'ftp'
-                ftp = ftp_factory(name=self.private_config["REMOTE_SETTING"]['file_transfer_protocol'],
-                                  server=self.private_config["REMOTE_SETTING"]["ftp_server"],
-                                  username=self.private_config["REMOTE_SETTING"]["username"],
-                                   password=self.private_config["REMOTE_SETTING"]["password"],
-                                   port=self.private_config["REMOTE_SETTING"]["port"])
-                if self.private_config["REMOTE_SETTING"]['file_transfer_protocol'] == 'ftp':
-                    alternative_protocol = 'sftp'
+                if (
+                    "file_transfer_protocol"
+                    not in self.private_config["REMOTE_SETTING"].keys()
+                ):
+                    self.private_config["REMOTE_SETTING"][
+                        "file_transfer_protocol"
+                    ] = "ftp"
+                ftp = ftp_factory(
+                    name=self.private_config["REMOTE_SETTING"][
+                        "file_transfer_protocol"
+                    ],
+                    server=self.private_config["REMOTE_SETTING"]["ftp_server"],
+                    username=self.private_config["REMOTE_SETTING"]["username"],
+                    password=self.private_config["REMOTE_SETTING"]["password"],
+                    port=self.private_config["REMOTE_SETTING"]["port"],
+                )
+                if (
+                    self.private_config["REMOTE_SETTING"]["file_transfer_protocol"]
+                    == "ftp"
+                ):
+                    alternative_protocol = "sftp"
                 else:
-                    alternative_protocol = 'ftp'
+                    alternative_protocol = "ftp"
                 send_data(ftp_obj=ftp)
                 logger.warn("sync: send success!")
             except Exception as e:
                 try:
-                    logger.warn("failed to send log files through {}: {} ".format(self.private_config["REMOTE_SETTING"]['file_transfer_protocol'], e))
+                    logger.warn(
+                        "failed to send log files through {}: {} ".format(
+                            self.private_config["REMOTE_SETTING"][
+                                "file_transfer_protocol"
+                            ],
+                            e,
+                        )
+                    )
                     logger.warn("try another protocol:", alternative_protocol)
-                    ftp = ftp_factory(name=alternative_protocol,
-                                      server=self.private_config["REMOTE_SETTING"]["ftp_server"],
-                                      username=self.private_config["REMOTE_SETTING"]["username"],
-                                      password=self.private_config["REMOTE_SETTING"]["password"],
-                                      port=self.private_config["REMOTE_SETTING"]["port"])
+                    ftp = ftp_factory(
+                        name=alternative_protocol,
+                        server=self.private_config["REMOTE_SETTING"]["ftp_server"],
+                        username=self.private_config["REMOTE_SETTING"]["username"],
+                        password=self.private_config["REMOTE_SETTING"]["password"],
+                        port=self.private_config["REMOTE_SETTING"]["port"],
+                    )
                     send_data(ftp_obj=ftp)
                     logger.warn("sync: send success!")
                 except Exception as e:
-                    logger.warn("fail to send log files through {}: {} ".format(alternative_protocol, e))
+                    logger.warn(
+                        "fail to send log files through {}: {} ".format(
+                            alternative_protocol, e
+                        )
+                    )
 
-                    logger.warn("server info ftp_server {}, username {}, password {}, remote_data_root {}".format(
-                        self.private_config["REMOTE_SETTING"]["ftp_server"],
-                        self.private_config["REMOTE_SETTING"]["username"],
-                        self.private_config["REMOTE_SETTING"]["password"], remote_data_root))
+                    logger.warn(
+                        "server info ftp_server {}, username {}, password {}, remote_data_root {}".format(
+                            self.private_config["REMOTE_SETTING"]["ftp_server"],
+                            self.private_config["REMOTE_SETTING"]["username"],
+                            self.private_config["REMOTE_SETTING"]["password"],
+                            remote_data_root,
+                        )
+                    )
                     import traceback
+
                     logger.warn(traceback.format_exc())
                     if not skip_error:
                         raise RuntimeError("fail to sync")
@@ -462,17 +587,25 @@ class Tester(object,):
             logger.warn("skip the sync process.")
 
     @classmethod
-    def log_file_finder(cls, record_date, task_table_name='train', file_root='../checkpoint/', log_type='dir'):
+    def log_file_finder(
+        cls,
+        record_date,
+        task_table_name="train",
+        file_root="../checkpoint/",
+        log_type="dir",
+    ):
         dir_parser = get_dir_seperator()
-        record_date = datetime.datetime.strptime(record_date, f'%Y{dir_parser}%m{dir_parser}%d{dir_parser}%H-%M-%S-%f')
+        record_date = datetime.datetime.strptime(
+            record_date, f"%Y{dir_parser}%m{dir_parser}%d{dir_parser}%H-%M-%S-%f"
+        )
         prefix = osp.join(file_root, task_table_name)
         directory = str(record_date.strftime(f"%Y{dir_parser}%m{dir_parser}%d"))
         directory = osp.join(prefix, directory)
-        file_found = ''
+        file_found = ""
         for root, dirs, files in os.walk(directory):
-            if log_type == 'dir':
+            if log_type == "dir":
                 search_list = dirs
-            elif log_type =='files':
+            elif log_type == "files":
                 search_list = files
             else:
                 raise NotImplementedError
@@ -492,12 +625,13 @@ class Tester(object,):
     def __gen_ip(self):
         try:
             import socket
+
             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             s.connect(("1.1.1.1", 80))
             ip = s.getsockname()[0]
             s.close()
         except Exception as e:
-            ip = 'noip'
+            ip = "noip"
         return ip
 
     def get_ignore_files(self, src, names):
@@ -508,52 +642,77 @@ class Tester(object,):
         :param names: List of file and directory names in the source directory
         :return: List of file names to be ignored
         """
-        if self.ignore_file_path is None:
-            return []
-        with open(self.ignore_file_path) as f:
-            lines = f.readlines()
-            ret_lines = []
-            for i in range(len(lines)):
-                line = lines[i].strip()
-                if '#' in line or '' == line:
-                    continue
-                ret_lines.append(line)
-
-        spec = pathspec.PathSpec.from_lines(pathspec.patterns.GitWildMatchPattern, ret_lines)
-        paths = []
-        for name in names:
-            paths.append(osp.join(src, name))
-        match_paths = list(set(spec.match_files(paths)))
         match_names = []
-        names  = list(names)
-        for idx, path in enumerate(paths):
-            if path in match_paths:
-                match_names.append(names[idx])
-        return match_names
+        if self.ignore_file_path is None:
+            if self.private_config["BACKUP_CONFIG"].get("ignore_code_paths"):
+                self.ignore_file_path = self.private_config["BACKUP_CONFIG"][
+                    "ignore_code_paths"
+                ]
+            else:
+                return []
+        if not isinstance(self.ignore_file_path, list):
+            self.ignore_file_path = [self.ignore_file_path]
+        for ignore_file_path in self.ignore_file_path:
+            with open(osp.join(self.project_root, ignore_file_path)) as f:
+                lines = f.readlines()
+                ret_lines = []
+                for i in range(len(lines)):
+                    line = lines[i].strip()
+                    if "#" in line or "" == line:
+                        continue
+                    ret_lines.append(line)
 
+            spec = pathspec.PathSpec.from_lines(
+                pathspec.patterns.GitWildMatchPattern, ret_lines
+            )
+            paths = []
+            for name in names:
+                paths.append(osp.join(src, name))
+            match_paths = list(set(spec.match_files(paths)))
+            names = list(names)
+            for idx, path in enumerate(paths):
+                if path in match_paths:
+                    match_names.append(names[idx])
+        return match_names
 
     def __copy_source_code(self, run_file, code_dir):
         import shutil
+
         def _copy_run_file(run_file, code_dir):
             if type(run_file) == list:
                 for file_name in run_file:
                     shutil.copy(file_name, code_dir)
             else:
-                shutil.copy(run_file, code_dir)        
-        if self.private_config["PROJECT_TYPE"]["backup_code_by"] == 'lib':
+                shutil.copy(run_file, code_dir)
+
+        if self.private_config["PROJECT_TYPE"]["backup_code_by"] == "lib":
             assert os.listdir(code_dir) == []
             os.removedirs(code_dir)
-            shutil.copytree(osp.join(self.project_root, self.private_config["BACKUP_CONFIG"]["lib_dir"]), code_dir)
-            assert run_file is not None, "you should define the run_file in lib backup mode."
+            shutil.copytree(
+                osp.join(
+                    self.project_root, self.private_config["BACKUP_CONFIG"]["lib_dir"]
+                ),
+                code_dir,
+            )
+            assert (
+                run_file is not None
+            ), "you should define the run_file in lib backup mode."
             _copy_run_file(run_file, code_dir)
-        elif self.private_config["PROJECT_TYPE"]["backup_code_by"] == 'source':
+        elif self.private_config["PROJECT_TYPE"]["backup_code_by"] == "source":
             if self.private_config["BACKUP_CONFIG"].get("backup_code_dir"):
                 for dir_name in self.private_config["BACKUP_CONFIG"]["backup_code_dir"]:
                     if os.path.isfile(osp.join(self.project_root, dir_name)):
-                        shutil.copy(osp.join(self.project_root, dir_name), osp.join(code_dir, dir_name))       
+                        shutil.copy(
+                            osp.join(self.project_root, dir_name),
+                            osp.join(code_dir, dir_name),
+                        )
                     else:
-                        shutil.copytree(osp.join(self.project_root, dir_name), osp.join(code_dir, dir_name),
-                                        ignore=self.get_ignore_files)
+                        shutil.copytree(
+                            osp.join(self.project_root, dir_name),
+                            osp.join(code_dir, dir_name),
+                            ignore=self.get_ignore_files,
+                            dirs_exist_ok=True,
+                        )
             if run_file is not None:
                 _copy_run_file(run_file, code_dir)
         else:
@@ -568,23 +727,28 @@ class Tester(object,):
         """
         version_num = self.get_version_num()
         if version_num is None:
-            name_format = '{prefix}/{date}/{timestep} {ip} {info}'
+            name_format = "{prefix}/{date}/{timestep} {ip} {info}"
         elif version_num == LOG_NAME_FORMAT_VERSION.V1:
-            name_format = '{prefix}/{date}/{timestep}_{ip}_{info}'
+            name_format = "{prefix}/{date}/{timestep}_{ip}_{info}"
         else:
             raise RuntimeError("unknown version name", version_num)
         date = record_date.strftime("%Y/%m/%d")
-        return name_format.format(prefix=prefix, date=date, timestep=self.record_date_to_str(record_date),
-                                                             ip=str(self.ipaddr), info=self.info)
+        return name_format.format(
+            prefix=prefix,
+            date=date,
+            timestep=self.record_date_to_str(record_date),
+            ip=str(self.ipaddr),
+            info=self.info,
+        )
 
     def record_date_to_str(self, record_date):
         return str(record_date.strftime("%H-%M-%S-%f"))
 
     def get_version_num(self):
-        version_num = getattr(self, 'log_name_format_version', None)
+        version_num = getattr(self, "log_name_format_version", None)
         return version_num
 
-    def __create_file_directory(self, prefix, ext='', is_file=True, record_date=None):
+    def __create_file_directory(self, prefix, ext="", is_file=True, record_date=None):
         if record_date is None:
             record_date = self.record_date
         name = self.log_name_formatter(prefix, record_date)
@@ -594,9 +758,9 @@ class Tester(object,):
             os.makedirs(directory, exist_ok=True)
             file_name = name + ext
         else:
-            directory = name + '/'
+            directory = name + "/"
             os.makedirs(directory, exist_ok=True)
-            file_name = ''
+            file_name = ""
         return directory, file_name
 
     def update_fph(self, cum_epochs):
@@ -606,11 +770,11 @@ class Tester(object,):
             cur_time = time.time()
             duration = (cur_time - self.last_record_fph_time) / 60 / 60
             fph = cum_epochs / duration
-            logger.record_tabular('fph', fph)
+            logger.record_tabular("fph", fph)
             # self.last_record_fph_time = cur_time
             logger.dump_tabular()
 
-    def time_record(self, name:str):
+    def time_record(self, name: str):
         """
         [deprecated] see RLA.easy_log.time_used_recorder
         record the consumed time of your code snippet. call this function to start a recorder.
@@ -624,7 +788,7 @@ class Tester(object,):
         assert name not in self._rc_start_time
         self._rc_start_time[name] = time.time()
 
-    def time_record_end(self, name:str):
+    def time_record_end(self, name: str):
         """
         [deprecated] see RLA.easy_log.time_used_recorder
         record the consumed time of your code snippet. call this function to start a recorder.
@@ -651,16 +815,21 @@ class Tester(object,):
         """
         if self.dl_framework == FRAMEWORK.tensorflow:
             import tensorflow as tf
+
             if var_prefix is None:
-                var_prefix = ''
+                var_prefix = ""
             try:
                 var_list = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, var_prefix)
                 if verbose:
                     logger.info("save variable :")
                     for v in var_list:
                         logger.info(v)
-                self.saver = tf.train.Saver(var_list=var_list, max_to_keep=max_to_keep, filename=self.checkpoint_dir,
-                                            save_relative_paths=True)
+                self.saver = tf.train.Saver(
+                    var_list=var_list,
+                    max_to_keep=max_to_keep,
+                    filename=self.checkpoint_dir,
+                    save_relative_paths=True,
+                )
 
             except AttributeError as e:
                 self.max_to_keep = max_to_keep
@@ -676,14 +845,19 @@ class Tester(object,):
         return self.time_step_holder.get_time()
 
     def set_timestep(self, ts):
-         self.time_step_holder.set_time(ts)
+        self.time_step_holder.set_time(ts)
 
-    def save_checkpoint(self, model_dict: Optional[dict] = None, related_variable: Optional[dict] = None, 
-                        checkpoint_name: Optional[str] = 'checkpoint'):
+    def save_checkpoint(
+        self,
+        model_dict: Optional[dict] = None,
+        related_variable: Optional[dict] = None,
+        checkpoint_name: Optional[str] = "checkpoint",
+    ):
         if self.dl_framework == FRAMEWORK.tensorflow:
-            if checkpoint_name != 'checkpoint':
+            if checkpoint_name != "checkpoint":
                 logger.warn("In tensorflow, the checkpoint is identified by ckp_index")
             import tensorflow as tf
+
             iter = self.time_step_holder.get_time()
             cpt_name = osp.join(self.checkpoint_dir, checkpoint_name)
             logger.info("save checkpoint to ", cpt_name, iter)
@@ -696,37 +870,53 @@ class Tester(object,):
                 if self.checkpoint_keep_list is None:
                     self.checkpoint_keep_list = []
                 iter = self.time_step_holder.get_time()
-                tf.train.Checkpoint(**model_dict).save(self.checkpoint_dir + "{}_{}".format(checkpoint_name, iter))
+                tf.train.Checkpoint(**model_dict).save(
+                    self.checkpoint_dir + "{}_{}".format(checkpoint_name, iter)
+                )
                 self.checkpoint_keep_list.append(iter)
-                self.checkpoint_keep_list = self.checkpoint_keep_list[-1 * self.max_to_keep:]
+                self.checkpoint_keep_list = self.checkpoint_keep_list[
+                    -1 * self.max_to_keep :
+                ]
         elif self.dl_framework == FRAMEWORK.torch:
             import torch
+
             if self.checkpoint_keep_list is None:
                 self.checkpoint_keep_list = []
             iter = self.time_step_holder.get_time()
-            torch.save(model_dict, f=tester.checkpoint_dir + "{}_{}.pt".format(checkpoint_name, iter))
+            torch.save(
+                model_dict,
+                f=tester.checkpoint_dir + "{}_{}.pt".format(checkpoint_name, iter),
+            )
             self.checkpoint_keep_list.append(iter)
             if len(self.checkpoint_keep_list) > self.max_to_keep:
                 for i in range(len(self.checkpoint_keep_list) - self.max_to_keep):
-                    rm_ckp_name = tester.checkpoint_dir + "{}_{}.pt".format(checkpoint_name, 
-                                                                            self.checkpoint_keep_list[i])
+                    rm_ckp_name = tester.checkpoint_dir + "{}_{}.pt".format(
+                        checkpoint_name, self.checkpoint_keep_list[i]
+                    )
                     logger.info("rm the older checkpoint", rm_ckp_name)
                     os.remove(rm_ckp_name)
-                self.checkpoint_keep_list = self.checkpoint_keep_list[-1 * self.max_to_keep:]
+                self.checkpoint_keep_list = self.checkpoint_keep_list[
+                    -1 * self.max_to_keep :
+                ]
         else:
             raise NotImplementedError
         if related_variable is not None:
             for k, v in related_variable.items():
-                self.add_custom_data(k, v, type(v), mode='replace')
-        self.add_custom_data(DEFAULT_X_NAME, time_step_holder.get_time(), int, mode='replace')
+                self.add_custom_data(k, v, type(v), mode="replace")
+        self.add_custom_data(
+            DEFAULT_X_NAME, time_step_holder.get_time(), int, mode="replace"
+        )
         self.serialize_object_and_save()
 
-    def load_checkpoint(self, ckp_index=None, checkpoint_name: Optional[str] = 'checkpoint'):
+    def load_checkpoint(
+        self, ckp_index=None, checkpoint_name: Optional[str] = "checkpoint"
+    ):
         if self.dl_framework == FRAMEWORK.tensorflow:
-            if checkpoint_name != 'checkpoint':
+            if checkpoint_name != "checkpoint":
                 logger.warn("In tensorflow, the checkpoint is identified by ckp_index")
             # TODO: load with variable scope.
             import tensorflow as tf
+
             cpt_name = osp.join(self.checkpoint_dir)
             logger.info("load checkpoint {}".format(cpt_name))
             if ckp_index is None:
@@ -735,56 +925,69 @@ class Tester(object,):
                 ckpt_path = tf.train.latest_checkpoint(cpt_name, ckp_index)
             logger.info("load ckpt_path {}".format(ckpt_path))
             self.saver.restore(tf.get_default_session(), ckpt_path)
-            
+
             # ================ UPDATE IN FUTURE VERSION ================
             try:
-                max_iter = int(ckpt_path.split('-')[-1])
+                max_iter = int(ckpt_path.split("-")[-1])
             except ValueError:
-                max_iter = int(ckpt_path.split('_')[-1])
+                max_iter = int(ckpt_path.split("_")[-1])
             # ================ UPDATE IN FUTURE VERSION ================
-                
+
             return max_iter, None
         elif self.dl_framework == FRAMEWORK.torch:
             import torch
+
             all_ckps = os.listdir(self.checkpoint_dir)
             ites = []
             for ckps in all_ckps:
                 print("ckps", ckps)
                 try:
-                    ites.append(int(ckps.split(f'{checkpoint_name}-')[1].split('.pt')[0]))
+                    ites.append(
+                        int(ckps.split(f"{checkpoint_name}-")[1].split(".pt")[0])
+                    )
                 except ValueError:
-                    ites.append(int(ckps.split(f'{checkpoint_name}_')[1].split('.pt')[0]))
+                    ites.append(
+                        int(ckps.split(f"{checkpoint_name}_")[1].split(".pt")[0])
+                    )
             idx = np.argsort(ites)
             all_ckps = np.array(all_ckps)[idx]
             print("all checkpoints:")
             pprint.pprint(all_ckps)
             if ckp_index is None:
-                
+
                 # ================ UPDATE IN FUTURE VERSION ================
                 try:
-                    ckp_index = int(all_ckps[-1].split(f'{checkpoint_name}-')[1].split('.pt')[0])
+                    ckp_index = int(
+                        all_ckps[-1].split(f"{checkpoint_name}-")[1].split(".pt")[0]
+                    )
                 except ValueError:
-                    ckp_index = int(all_ckps[-1].split(f'{checkpoint_name}_')[1].split('.pt')[0])
+                    ckp_index = int(
+                        all_ckps[-1].split(f"{checkpoint_name}_")[1].split(".pt")[0]
+                    )
                 # ================ UPDATE IN FUTURE VERSION ================
-                
+
             # ================ UPDATE IN FUTURE VERSION ================
             try:
-                return ckp_index, torch.load(self.checkpoint_dir + "{}-{}.pt".format(checkpoint_name, ckp_index))
+                return ckp_index, torch.load(
+                    self.checkpoint_dir + "{}-{}.pt".format(checkpoint_name, ckp_index)
+                )
             except FileNotFoundError:
-                return ckp_index, torch.load(self.checkpoint_dir + "{}_{}.pt".format(checkpoint_name, ckp_index))
+                return ckp_index, torch.load(
+                    self.checkpoint_dir + "{}_{}.pt".format(checkpoint_name, ckp_index)
+                )
             # ================ UPDATE IN FUTURE VERSION ================
 
     def auto_parse_info(self):
-        return '&'.join(self.hyper_param_record)
+        return "&".join(self.hyper_param_record)
 
     def add_graph(self, sess):
         assert self.writer is not None
         self.writer.add_graph(sess.graph)
 
-    def add_custom_data(self, key, data, dtype=list, max_len=-1, mode='append'):
-        if mode == 'replace':
+    def add_custom_data(self, key, data, dtype=list, max_len=-1, mode="append"):
+        if mode == "replace":
             self.custom_data[key] = data
-        elif mode == 'append':
+        elif mode == "append":
             if key not in self.custom_data:
                 if issubclass(dtype, deque):
                     assert max_len > 0
@@ -803,9 +1006,10 @@ class Tester(object,):
         else:
             raise NotImplementedError
 
-    def print_custom_data(self, key, prefix=''):
+    def print_custom_data(self, key, prefix=""):
         assert key in self.custom_data
         import numpy as np
+
         mean_val = np.mean(self.custom_data[key])
         logger.record_tabular(prefix + key, mean_val)
 
@@ -831,7 +1035,7 @@ class Tester(object,):
         self.writer = None
         saver = self.saver
         self.saver = None
-        with open(self.pkl_file, 'wb') as f:
+        with open(self.pkl_file, "wb") as f:
             dill.dump(self, f, recurse=True)
         self.writer = writer
         self.saver = saver
@@ -845,33 +1049,40 @@ class Tester(object,):
         params = exp_manager.hyper_param
         # params['formatted_log_name'] = formatted_log_name
 
-
     def print_large_memory_variable(self):
         import sys
+
         large_mermory_dict = {}
 
-        def sizeof_fmt(num, suffix='B'):
-            for unit in ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi']:
+        def sizeof_fmt(num, suffix="B"):
+            for unit in ["", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"]:
                 if abs(num) < 1024.0:
                     return "%3.1f %s%s" % (num, unit, suffix), unit
                 num /= 1024.0
-            return "%.1f %s%s" % (num, 'Yi', suffix), 'Yi'
+            return "%.1f %s%s" % (num, "Yi", suffix), "Yi"
 
-        for name, size in sorted(((name, sys.getsizeof(value)) for name, value in locals().items()),
-                                 key=lambda x: -x[1])[:10]:
+        for name, size in sorted(
+            ((name, sys.getsizeof(value)) for name, value in locals().items()),
+            key=lambda x: -x[1],
+        )[:10]:
             size_str, fmt_type = sizeof_fmt(size)
-            if fmt_type in ['', 'Ki', 'Mi']:
+            if fmt_type in ["", "Ki", "Mi"]:
                 continue
             logger.info("{:>30}: {:>8}".format(name, size_str))
             large_mermory_dict[str(name)] = size_str
         if large_mermory_dict != {}:
-            summary = self.dict_to_table_text_summary(large_mermory_dict, 'large_memory')
-            self.add_summary_to_logger(summary, 'large_memory')
+            summary = self.dict_to_table_text_summary(
+                large_mermory_dict, "large_memory"
+            )
+            self.add_summary_to_logger(summary, "large_memory")
 
     def dict_to_table_text_summary(self, input_dict, name):
         import tensorflow as tf
+
         with tf.Session(graph=tf.Graph()) as sess:
-            to_tensor = [tf.convert_to_tensor([k, str(v)]) for k, v in input_dict.items()]
+            to_tensor = [
+                tf.convert_to_tensor([k, str(v)]) for k, v in input_dict.items()
+            ]
             return sess.run(tf.summary.text(name, tf.stack(to_tensor)))
 
 
